@@ -44,7 +44,7 @@ def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: i
     return occ_map
 
 
-def create_multiple_maps_and_save():
+def generate_maps():
     for map_no in range(100):
         save_path = f'/home/czarek/mgr/maps/blanks/map_{map_no}_path_sx_sy_fx_fy.png'
         occ_map = create_map(400, 400)
@@ -59,4 +59,4 @@ def show_map(occ_map: np.array):
 
 
 if __name__ == '__main__':
-    create_multiple_maps_and_save()
+    generate_maps()

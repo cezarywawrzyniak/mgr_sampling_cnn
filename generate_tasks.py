@@ -6,10 +6,11 @@ import numpy as np
 from scipy.spatial import distance
 
 TASK_NUMBER_FOR_SINGLE_MAP = 10
+MAPS_DIRECTORY = f'/home/czarek/mgr/maps/blanks/*.png'
 
 
 def get_blank_maps_list() -> list:
-    maps_dir = f'/home/czarek/mgr/maps/blanks/*.png'
+    maps_dir = MAPS_DIRECTORY
     maps_list = sorted(glob.glob(maps_dir))
     return maps_list
 
@@ -81,10 +82,10 @@ def add_to_string(path: str, where: str, to_add: str) -> str:
     return new_path
 
 
-def main():
+def generate_tasks():
     maps = get_blank_maps_list()
     iterate_over_all_maps(maps)
 
 
 if __name__ == '__main__':
-    main()
+    generate_tasks()
