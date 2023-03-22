@@ -100,7 +100,6 @@ def get_from_string(path: str, start: str, finish: str) -> str:
 
 def generate_paths():
     maps = get_blank_maps_list()
-    i = 0
     for map_path in maps:
         occ_map = cv2.imread(map_path, 0)
         start, finish = get_start_finish_coordinates(map_path)
@@ -109,17 +108,12 @@ def generate_paths():
             visualize_path(occ_map=occ_map, path=path, directory=map_path)
         else:
             print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", map_path)
-        i += 1
-        if i >= 1:
-            break
 
 
 def visualize_path(occ_map: np.array, path: list, directory: str):
     dir_points_map = directory.replace('start_finish', 'start_finish_visualized')
     no_points_map = cv2.cvtColor(occ_map, cv2.COLOR_GRAY2BGR)
     points_map = cv2.imread(dir_points_map)
-    points_map = no_points_map
-    # path_image = np.zeros((points_map.shape[0], points_map.shape[1], 1))
     path_image = np.zeros_like(points_map)
     path_image.fill(255)
 
@@ -129,46 +123,48 @@ def visualize_path(occ_map: np.array, path: list, directory: str):
         path_image = cv2.circle(path_image, (point[1], point[0]), 5, (255, 0, 0), -1)
 
     path_image = cv2.GaussianBlur(path_image, (33, 33), cv2.BORDER_WRAP)
-    # path_image = cv2.GaussianBlur(path_image, (33, 33), cv2.BORDER_WRAP)
     hsv = cv2.cvtColor(path_image, cv2.COLOR_BGR2HSV)
     lower_blue = np.array([110, 0, 0])
     upper_blue = np.array([130, 255, 255])
 
     mask = cv2.inRange(hsv, lower_blue, upper_blue)
 
-    gray = cv2.cvtColor(points_map, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)[1]
-    mask_2137 = cv2.bitwise_not(thresh)
+    gray_points = cv2.cvtColor(points_map, cv2.COLOR_BGR2GRAY)
+    gray_no_points = cv2.cvtColor(no_points_map, cv2.COLOR_BGR2GRAY)
 
-    mask2 = mask - mask_2137
-    img2_masked = cv2.bitwise_and(path_image, path_image, mask=thresh)
+    thresh_points = cv2.threshold(gray_points, 240, 255, cv2.THRESH_BINARY)[1]
+    thresh_no_points = cv2.threshold(gray_no_points, 240, 255, cv2.THRESH_BINARY)[1]
 
-    mask_inv = cv2.bitwise_not(mask2)
-    img1_masked = cv2.bitwise_and(points_map, points_map, mask=mask_inv)
+    not_mask_points = cv2.bitwise_not(thresh_points)
+    not_mask_no_points = cv2.bitwise_not(thresh_no_points)
 
-    result = cv2.add(img1_masked, img2_masked)
+    mask2_points = mask - not_mask_points
+    mask2_no_points = mask - not_mask_no_points
 
-    # path_image = cv2.cvtColor(path_image, cv2.COLOR_GRAY2BGR)
-    # path_image = cv2.applyColorMap(path_image, cv2.COLORMAP_MAGMA)
+    img_points_path_masked = cv2.bitwise_and(path_image, path_image, mask=thresh_points)
+    img_no_points_path_masked = cv2.bitwise_and(path_image, path_image, mask=thresh_no_points)
+
+    mask2_points_inv = cv2.bitwise_not(mask2_points)
+    mask2_no_points_inv = cv2.bitwise_not(mask2_no_points)
+
+    img_points_masked = cv2.bitwise_and(points_map, points_map, mask=mask2_points_inv)
+    img_no_points_masked = cv2.bitwise_and(no_points_map, no_points_map, mask=mask2_no_points_inv)
+
+    result_points = cv2.add(img_points_masked, img_points_path_masked)
+    result_no_points = cv2.add(img_no_points_masked, img_no_points_path_masked)
 
     dir_save_no_points_map = directory.replace('start_finish', 'paths')
     dir_save_points_map = dir_save_no_points_map.replace('paths', 'paths_with_points')
 
-    # cv2.imwrite(dir_save_no_points_map, no_points_map)
-    # cv2.imwrite(dir_save_points_map, points_map)
+    cv2.imwrite(dir_save_no_points_map, result_no_points)
+    print(dir_save_no_points_map)
+    cv2.imwrite(dir_save_points_map, result_points)
+    print(dir_save_points_map)
 
-    # cv2.imshow("Path only", no_points_map)
-    # cv2.imshow("Path and points", points_map)
-    # cv2.imshow("Blurred path", path_image)
-    cv2.imshow("mask", mask)
-    cv2.imshow("mask_2137", mask_2137)
-    cv2.imshow("mask2", mask2)
-    cv2.imshow("mask_inv mask", mask_inv)
-    cv2.imshow("img1_masked", img1_masked)
-    cv2.imshow("img2_masked", img2_masked)
-    cv2.imshow("result", result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("result_points", result_points)
+    # cv2.imshow("result_no_points", result_no_points)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
