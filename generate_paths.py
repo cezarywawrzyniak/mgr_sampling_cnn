@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import heapq
 import math
+import os
 
 MAPS_DIRECTORY = f'/home/czarek/mgr/maps/start_finish/*.png'
 
@@ -110,6 +111,7 @@ def generate_paths():
             # finished = True
         else:
             print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", map_path)
+            os.remove(map_path)
         # if finished:
         #     break
 
