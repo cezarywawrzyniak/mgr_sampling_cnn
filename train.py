@@ -66,7 +66,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 2, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
@@ -121,7 +121,7 @@ class UNet_cooler(pl.LightningModule):
         self.conv5 = self.base_model.layer4
 
         # Decoder
-        self.upconv6 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.upconv6 = nn.ConvTranspose2d(512+1, 256, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
             nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
@@ -145,9 +145,6 @@ class UNet_cooler(pl.LightningModule):
         self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x, coords):
-        print(x.size())
-        print(coords.size())
-
         # Encoder
         x1 = self.conv1(x)
         x2 = self.conv2(x1)
@@ -155,7 +152,8 @@ class UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
-        # x5 = torch.cat((x5, coords), dim=1)
+        coords_ = F.interpolate(coords, size=x5.size()[2:], mode='bilinear', align_corners=True)
+        x5 = torch.cat((x5, coords_), dim=1)
 
         # Decoder
         x6 = self.upconv6(x5)
@@ -271,7 +269,7 @@ def test_training():
     trainer = pl.Trainer(
                          # logger=neptune,
                          accelerator='gpu',
-                         fast_dev_run=True,
+                         fast_dev_run=False,
                          # log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
