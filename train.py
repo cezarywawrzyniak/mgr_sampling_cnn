@@ -64,11 +64,13 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 12, test_size=0.15):
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
+                 num_workers=16):
         super().__init__()
         self._main_path = main_path
         self._batch_size = batch_size
         self._test_size = test_size  # percentage
+        self._num_workers = num_workers
 
         self.augmentations = A.Compose([
             ToTensorV2()
@@ -89,10 +91,10 @@ class MapsDataModule(pl.LightningDataModule):
         self.val_dataset = MapsDataset(self._main_path, val_images_names, self.transforms)
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self._batch_size)
+        return DataLoader(self.train_dataset, batch_size=self._batch_size, num_workers=self._num_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self._batch_size)
+        return DataLoader(self.val_dataset, batch_size=self._batch_size, num_workers=self._num_workers)
 
     def test_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self._batch_size)
@@ -142,6 +144,101 @@ class Segmenter(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=3e-4)
+
+
+class UNet_cooler(pl.LightningModule):
+    def __init__(self):
+        super(UNet_cooler, self).__init__()
+
+        self.base_model = models.resnet18(pretrained=True)
+
+        # Encoder
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.conv2 = self.base_model.layer1
+        self.conv3 = self.base_model.layer2
+        self.conv4 = self.base_model.layer3
+        self.conv5 = self.base_model.layer4
+
+        # Decoder
+        self.upconv6 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.conv6 = nn.Sequential(
+            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.upconv7 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.conv7 = nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.upconv8 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.conv8 = nn.Sequential(
+            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
+
+    def forward(self, x):
+        # Encoder
+        x1 = self.conv1(x)
+        x2 = self.conv2(x1)
+        x3 = self.conv3(x2)
+        x4 = self.conv4(x3)
+        x5 = self.conv5(x4)
+
+        # Decoder
+        x6 = self.upconv6(x5)
+        x6 = torch.cat((x6, x4), dim=1)
+        x6 = self.conv6(x6)
+        x7 = self.upconv7(x6)
+        x7 = torch.cat((x7, x3), dim=1)
+        x7 = self.conv7(x7)
+        x8 = self.upconv8(x7)
+        x8 = torch.cat((x8, x2), dim=1)
+        x8 = self.conv8(x8)
+        x9 = self.final_conv(x8)
+        return x9
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss_fn = nn.BCEWithLogitsLoss()
+        loss = loss_fn(y_hat, y)
+        self.log('train_loss', loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss_fn = nn.BCEWithLogitsLoss()
+        loss = loss_fn(y_hat, y)
+        self.log('val_loss', loss)
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss_fn = nn.BCEWithLogitsLoss()
+        loss = loss_fn(y_hat, y)
+        self.log('test_loss', loss)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': scheduler,
+            'monitor': 'val_loss'
+        }
 
 
 def test_dataset():
@@ -194,6 +291,7 @@ def test_training():
     data_module = MapsDataModule()
 
     model = Segmenter()
+    model = UNet_cooler()
 
     # neptune = pl.loggers.neptune.NeptuneLogger(
     #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
