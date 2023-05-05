@@ -32,7 +32,7 @@ class MapsDataset(Dataset):
     def __len__(self):
         return len(self._img_names)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         img_name = self._img_names[index]
 
         read_image = Image.open(self._main_path / 'images' / img_name)
@@ -52,15 +52,17 @@ class MapsDataset(Dataset):
         filename_parts = file_name.split('_')
         start_x, start_y = int(filename_parts[3][2:]), int(filename_parts[4][2:])
         finish_x, finish_y = int(filename_parts[5][2:]), int(filename_parts[6][2:])
-        coords = [(start_x, start_y), (finish_x, finish_y)]
+        coords = [[start_x, start_y], [finish_x, finish_y]]
+        coords = transforms.ToTensor()(np.array(coords))
 
+        transformed = self._transforms(image=image, mask=mask)
         # print(coords)
+        # print(transformed['image'].float())
         # print(f'Image shape: {image.shape}')
         # print(f'Mask shape: {mask.shape}')
-        transformed = self._transforms(image=image, mask=mask)
 
         # return image, mask, coords
-        return transformed['image'].float(), transformed['mask'][None, ...].float()
+        return transformed['image'].float(), transformed['mask'][None, ...].float(), coords.float()
 
 
 class MapsDataModule(pl.LightningDataModule):
@@ -98,52 +100,6 @@ class MapsDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self._batch_size)
-
-
-class Segmenter(pl.LightningModule):
-    def __init__(self):
-        super().__init__()
-
-        self.network = Unet('resnet18')
-
-        self.loss = DiceLoss('binary', from_logits=True)
-        # self.loss = DiceLoss('multiclass', from_logits=True)
-
-        # metric_collection = MetricCollection([
-        #     classification.BinaryF1Score(),
-        #     classification.BinaryPrecision(),
-        #     classification.BinaryRecall()
-        # ])
-        # self.train_metrics = metric_collection.clone('train_')
-        # self.val_metrics = metric_collection.clone('val_')
-        # self.test_metrics = metric_collection.clone('test_')
-
-    def forward(self, x):
-        return self.network(x)
-
-    def training_step(self, batch, batch_idx):
-        inputs, targets = batch
-        preds = self(inputs)
-        loss = self.loss(preds, targets)
-        # self.log_dict(self.train_metrics(preds, targets), prog_bar=True)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        inputs, targets = batch
-        preds = self(inputs)
-        loss = self.loss(preds, targets)
-        self.log('val_loss', loss)
-        # self.log_dict(self.val_metrics(preds, targets), prog_bar=True)
-
-    def test_step(self, batch, batch_idx):
-        inputs, targets = batch
-        preds = self(inputs)
-        loss = self.loss(preds, targets)
-        self.log('test_loss', loss)
-        # self.log_dict(self.test_metrics(preds, targets))
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=3e-4)
 
 
 class UNet_cooler(pl.LightningModule):
@@ -188,13 +144,18 @@ class UNet_cooler(pl.LightningModule):
         )
         self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
 
-    def forward(self, x):
+    def forward(self, x, coords):
+        print(x.size())
+        print(coords.size())
+
         # Encoder
         x1 = self.conv1(x)
         x2 = self.conv2(x1)
         x3 = self.conv3(x2)
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
+
+        # x5 = torch.cat((x5, coords), dim=1)
 
         # Decoder
         x6 = self.upconv6(x5)
@@ -210,23 +171,23 @@ class UNet_cooler(pl.LightningModule):
         return x9
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
+        x, y, coords = batch
+        y_hat = self(x, coords)
         loss_fn = nn.BCEWithLogitsLoss()
         loss = loss_fn(y_hat, y)
         self.log('train_loss', loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
+        x, y, coords = batch
+        y_hat = self(x, coords)
         loss_fn = nn.BCEWithLogitsLoss()
         loss = loss_fn(y_hat, y)
         self.log('val_loss', loss)
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
+        x, y, coords = batch
+        y_hat = self(x, coords)
         loss_fn = nn.BCEWithLogitsLoss()
         loss = loss_fn(y_hat, y)
         self.log('test_loss', loss)
@@ -290,7 +251,6 @@ def test_training():
     # instantiate your data module
     data_module = MapsDataModule()
 
-    model = Segmenter()
     model = UNet_cooler()
 
     # neptune = pl.loggers.neptune.NeptuneLogger(
@@ -311,6 +271,8 @@ def test_training():
     trainer = pl.Trainer(
                          # logger=neptune,
                          accelerator='gpu',
+                         fast_dev_run=True,
+                         # log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
                          max_epochs=1000)
@@ -318,6 +280,6 @@ def test_training():
 
 
 if __name__ == '__main__':
-    test_dataset()
-    test_datamodule()
+    # test_dataset()
+    # test_datamodule()
     test_training()
