@@ -1,0 +1,225 @@
+import os
+import numpy as np
+import torch
+import albumentations as A
+import pytorch_lightning as pl
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.models as models
+
+from torch.utils.data import Dataset
+from pathlib import Path
+from typing import List, Tuple
+from PIL import Image
+from albumentations.pytorch import ToTensorV2
+from torch.utils.data import DataLoader
+from sklearn.model_selection import train_test_split
+from torchmetrics import MetricCollection, classification
+from segmentation_models_pytorch import Unet
+from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
+from pytorch_lightning import Trainer
+from torchvision import transforms
+
+
+class MapsDataset(Dataset):
+    def __init__(self, main_path: Path, img_names: List[str], transforms: A.Compose):
+        super().__init__()
+
+        self._main_path = main_path
+        self._img_names = img_names
+        self._transforms = transforms
+
+    def __len__(self):
+        return len(self._img_names)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        img_name = self._img_names[index]
+
+        read_image = Image.open(self._main_path / 'images' / img_name)
+        read_image = read_image.convert('RGB')
+        image = np.asarray(read_image)
+        # print("IMAGE:")
+        # print(self._main_path / 'images' / img_name)
+
+        read_mask = Image.open(self._main_path / 'masks' / img_name)
+        mask = np.asarray(read_mask)
+        mask = (mask - mask.min()) / (mask.max() - mask.min())  # normalization 0-255
+        # print("MASK:")
+        # print(self._main_path / 'masks' / img_name)
+
+        # extract start and finish coordinates from the filename
+        file_name = os.path.splitext(img_name)[0]
+        filename_parts = file_name.split('_')
+        start_x, start_y = int(filename_parts[3][2:]), int(filename_parts[4][2:])
+        finish_x, finish_y = int(filename_parts[5][2:]), int(filename_parts[6][2:])
+        coords = [(start_x, start_y), (finish_x, finish_y)]
+
+        # print(coords)
+        # print(f'Image shape: {image.shape}')
+        # print(f'Mask shape: {mask.shape}')
+        transformed = self._transforms(image=image, mask=mask)
+
+        # return image, mask, coords
+        return transformed['image'].float(), transformed['mask'][None, ...].float()
+
+
+class MapsDataModule(pl.LightningDataModule):
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 12, test_size=0.15):
+        super().__init__()
+        self._main_path = main_path
+        self._batch_size = batch_size
+        self._test_size = test_size  # percentage
+
+        self.augmentations = A.Compose([
+            ToTensorV2()
+        ])
+        self.transforms = A.Compose([
+            ToTensorV2()
+        ])
+
+    def setup(self, stage: str):
+        images_names = [image_path.name
+                        for image_path in sorted((self._main_path / 'images').iterdir())]
+
+        train_images_names, val_images_names = train_test_split(images_names,
+                                                                test_size=self._test_size,
+                                                                random_state=42)
+
+        self.train_dataset = MapsDataset(self._main_path, train_images_names, self.augmentations)
+        self.val_dataset = MapsDataset(self._main_path, val_images_names, self.transforms)
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self._batch_size)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self._batch_size)
+
+    def test_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self._batch_size)
+
+
+class Segmenter(pl.LightningModule):
+    def __init__(self):
+        super().__init__()
+
+        self.network = Unet('resnet18')
+
+        self.loss = DiceLoss('binary', from_logits=True)
+        # self.loss = DiceLoss('multiclass', from_logits=True)
+
+        # metric_collection = MetricCollection([
+        #     classification.BinaryF1Score(),
+        #     classification.BinaryPrecision(),
+        #     classification.BinaryRecall()
+        # ])
+        # self.train_metrics = metric_collection.clone('train_')
+        # self.val_metrics = metric_collection.clone('val_')
+        # self.test_metrics = metric_collection.clone('test_')
+
+    def forward(self, x):
+        return self.network(x)
+
+    def training_step(self, batch, batch_idx):
+        inputs, targets = batch
+        preds = self(inputs)
+        loss = self.loss(preds, targets)
+        # self.log_dict(self.train_metrics(preds, targets), prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        inputs, targets = batch
+        preds = self(inputs)
+        loss = self.loss(preds, targets)
+        self.log('val_loss', loss)
+        # self.log_dict(self.val_metrics(preds, targets), prog_bar=True)
+
+    def test_step(self, batch, batch_idx):
+        inputs, targets = batch
+        preds = self(inputs)
+        loss = self.loss(preds, targets)
+        self.log('test_loss', loss)
+        # self.log_dict(self.test_metrics(preds, targets))
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=3e-4)
+
+
+def test_dataset():
+    # set up transforms
+    transform = A.Compose([
+        # transforms.ToPILImage(),
+        ToTensorV2()
+    ])
+
+    # create dataset instance
+    base_path = Path('/home/czarek/mgr/data/train')
+    images_names = [image_path.name
+                    for image_path in sorted((base_path / 'images').iterdir())]
+    dataset = MapsDataset(base_path, images_names, transforms=transform)
+
+    # test the dataset by printing some values
+    idx = 0
+    # image, mask, coords = dataset[idx]
+    image, mask = dataset[idx]
+    print(f'Image shape: {image.shape}')
+    print(f'Mask shape: {mask.shape}')
+    # print(f'Start coordinate: {coords["start"]}')
+    # print(f'Finish coordinate: {coords["finish"]}')
+
+
+def test_datamodule():
+    # instantiate your data module
+    data_module = MapsDataModule()
+    data_module.setup("test")
+
+    # load the training and validation sets using the datamodule's .train_dataloader() and .val_dataloader() methods
+    train_dataloader = data_module.train_dataloader()
+    val_dataloader = data_module.val_dataloader()
+    test_dataloader = data_module.test_dataloader()
+
+    # get a batch of training data
+    batch = next(iter(train_dataloader))
+
+    # extract the images and masks from the batch
+    # images, masks, coordinates = batch
+    images, masks = batch
+
+    # inspect the shape and data type of the images and masks
+    print(images.shape, images.dtype)
+    print(masks.shape, masks.dtype)
+
+
+def test_training():
+    # instantiate your data module
+    data_module = MapsDataModule()
+
+    model = Segmenter()
+
+    # neptune = pl.loggers.neptune.NeptuneLogger(
+    #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
+    #     project='czarkoman/zpo-project'
+    # )
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        filename='{epoch}-{val_loss:.3f}',
+        verbose=True
+    )
+    early_stopping_callback = pl.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=5,
+        verbose=True
+    )
+
+    trainer = pl.Trainer(
+                         # logger=neptune,
+                         accelerator='gpu',
+                         devices=1,
+                         callbacks=[checkpoint_callback, early_stopping_callback],
+                         max_epochs=1000)
+    trainer.fit(model, datamodule=data_module)
+
+
+if __name__ == '__main__':
+    test_dataset()
+    test_datamodule()
+    test_training()
