@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+import torchmetrics
 
 from torch.utils.data import Dataset
 from pathlib import Path
@@ -15,9 +16,7 @@ from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from torchmetrics import MetricCollection, classification
-from segmentation_models_pytorch import Unet
 from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
-from pytorch_lightning import Trainer
 from torchvision import transforms
 
 
@@ -106,6 +105,24 @@ class UNet_cooler(pl.LightningModule):
     def __init__(self):
         super(UNet_cooler, self).__init__()
 
+        # metric_collection = MetricCollection([
+        #     # TODO it shouldn't be binary
+        #     # classification.BinaryF1Score(),
+        #     # classification.BinaryPrecision(),
+        #     # classification.BinaryRecall()
+        # ])
+
+        # metric_collection = MetricCollection({
+        #     'accuracy': torchmetrics.Accuracy(num_classes=2, task='binary'),
+        #     'precision': torchmetrics.Precision(num_classes=2, average='macro', task='binary')
+        # }, prefix='')
+        #
+        # self.train_metrics = metric_collection.clone('train_')
+        # self.val_metrics = metric_collection.clone('val_')
+        # self.test_metrics = metric_collection.clone('test_')
+
+        self.loss = nn.BCEWithLogitsLoss()
+
         self.base_model = models.resnet18(pretrained=True)
 
         # Encoder
@@ -171,24 +188,24 @@ class UNet_cooler(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y, coords = batch
         y_hat = self(x, coords)
-        loss_fn = nn.BCEWithLogitsLoss()
-        loss = loss_fn(y_hat, y)
+        loss = self.loss(y_hat, y)
         self.log('train_loss', loss)
+        # self.log_dict(self.train_metrics(y_hat, y), prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y, coords = batch
         y_hat = self(x, coords)
-        loss_fn = nn.BCEWithLogitsLoss()
-        loss = loss_fn(y_hat, y)
+        loss = self.loss(y_hat, y)
         self.log('val_loss', loss)
+        # self.log_dict(self.val_metrics(y_hat, y), prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         x, y, coords = batch
         y_hat = self(x, coords)
-        loss_fn = nn.BCEWithLogitsLoss()
-        loss = loss_fn(y_hat, y)
+        loss = self.loss(y_hat, y)
         self.log('test_loss', loss)
+        # self.log_dict(self.test_metrics(y_hat, y))
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -251,10 +268,10 @@ def test_training():
 
     model = UNet_cooler()
 
-    # neptune = pl.loggers.neptune.NeptuneLogger(
-    #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
-    #     project='czarkoman/zpo-project'
-    # )
+    neptune = pl.loggers.neptune.NeptuneLogger(
+        api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
+        project='czarkoman/mgr-sampling-cnn'
+    )
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename='{epoch}-{val_loss:.3f}',
@@ -267,14 +284,19 @@ def test_training():
     )
 
     trainer = pl.Trainer(
-                         # logger=neptune,
+                         logger=neptune,
                          accelerator='gpu',
                          fast_dev_run=False,
                          # log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
-                         max_epochs=1000)
+                         max_epochs=10)
     trainer.fit(model, datamodule=data_module)
+
+    trainer.test(model, datamodule=data_module, ckpt_path='best')
+    neptune.run.stop()
+
+    torch.save(model.state_dict(), "sampling_cnn.pth")
 
 
 if __name__ == '__main__':
