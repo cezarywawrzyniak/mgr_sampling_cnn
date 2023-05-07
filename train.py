@@ -18,6 +18,9 @@ from sklearn.model_selection import train_test_split
 from torchmetrics import MetricCollection, classification
 from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
 from torchvision import transforms
+import matplotlib.pyplot as plt
+
+MODEL_PATH = "sampling_cnn.pth"
 
 
 class MapsDataset(Dataset):
@@ -105,22 +108,6 @@ class UNet_cooler(pl.LightningModule):
     def __init__(self):
         super(UNet_cooler, self).__init__()
 
-        # metric_collection = MetricCollection([
-        #     # TODO it shouldn't be binary
-        #     # classification.BinaryF1Score(),
-        #     # classification.BinaryPrecision(),
-        #     # classification.BinaryRecall()
-        # ])
-
-        # metric_collection = MetricCollection({
-        #     'accuracy': torchmetrics.Accuracy(num_classes=2, task='binary'),
-        #     'precision': torchmetrics.Precision(num_classes=2, average='macro', task='binary')
-        # }, prefix='')
-        #
-        # self.train_metrics = metric_collection.clone('train_')
-        # self.val_metrics = metric_collection.clone('val_')
-        # self.test_metrics = metric_collection.clone('test_')
-
         self.loss = nn.BCEWithLogitsLoss()
 
         self.base_model = models.resnet18(pretrained=True)
@@ -137,24 +124,53 @@ class UNet_cooler(pl.LightningModule):
         self.conv4 = self.base_model.layer3
         self.conv5 = self.base_model.layer4
 
+        self.conv_coords5 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.conv_coords4 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.conv_coords3 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+        self.conv_coords2 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
+
         # Decoder
-        self.upconv6 = nn.ConvTranspose2d(512+1, 256, kernel_size=2, stride=2)
+        self.upconv6 = nn.ConvTranspose2d(512+512, 256, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(768, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv7 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
         self.conv7 = nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(384, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv8 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.conv8 = nn.Sequential(
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
@@ -169,8 +185,18 @@ class UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
-        coords_ = F.interpolate(coords, size=x5.size()[2:], mode='bilinear', align_corners=True)
-        x5 = torch.cat((x5, coords_), dim=1)
+        coords2 = self.conv_coords2(coords)
+        coords2 = F.interpolate(coords2, size=x2.size()[2:], mode='bilinear', align_corners=True)
+        x2 = torch.cat((x2, coords2), dim=1)
+        coords3 = self.conv_coords3(coords)
+        coords3 = F.interpolate(coords3, size=x3.size()[2:], mode='bilinear', align_corners=True)
+        x3 = torch.cat((x3, coords3), dim=1)
+        coords4 = self.conv_coords4(coords)
+        coords4 = F.interpolate(coords4, size=x4.size()[2:], mode='bilinear', align_corners=True)
+        x4 = torch.cat((x4, coords4), dim=1)
+        coords5 = self.conv_coords5(coords)
+        coords5 = F.interpolate(coords5, size=x5.size()[2:], mode='bilinear', align_corners=True)
+        x5 = torch.cat((x5, coords5), dim=1)
 
         # Decoder
         x6 = self.upconv6(x5)
@@ -232,12 +258,11 @@ def test_dataset():
 
     # test the dataset by printing some values
     idx = 0
-    # image, mask, coords = dataset[idx]
-    image, mask = dataset[idx]
+    image, mask, coords = dataset[idx]
     print(f'Image shape: {image.shape}')
     print(f'Mask shape: {mask.shape}')
-    # print(f'Start coordinate: {coords["start"]}')
-    # print(f'Finish coordinate: {coords["finish"]}')
+    print(f'Start coordinate: {coords[0][0]}')
+    print(f'Finish coordinate: {coords[0][1]}')
 
 
 def test_datamodule():
@@ -255,7 +280,7 @@ def test_datamodule():
 
     # extract the images and masks from the batch
     # images, masks, coordinates = batch
-    images, masks = batch
+    images, masks, coords = batch
 
     # inspect the shape and data type of the images and masks
     print(images.shape, images.dtype)
@@ -290,13 +315,13 @@ def test_training():
                          # log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
-                         max_epochs=10)
+                         max_epochs=50)
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
     neptune.run.stop()
 
-    torch.save(model.state_dict(), "sampling_cnn.pth")
+    torch.save(model.state_dict(), MODEL_PATH)
 
 
 if __name__ == '__main__':

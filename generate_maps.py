@@ -32,8 +32,8 @@ def create_map(width: int, height: int) -> np.array:
 
 def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: int) -> np.array:
     # get random placement
-    x_start = random.randint(0, 400)
-    y_start = random.randint(0, 400)
+    x_start = random.randint(0, 512)
+    y_start = random.randint(0, 512)
     # get random size
     x_end = random.randint(x_start + x_min, x_start + x_max)
     y_end = random.randint(y_start + y_min, y_start + y_max)

@@ -127,8 +127,8 @@ def visualize_path(occ_map: np.array, path: list, directory: str):
 
     for point in path:
         points_map[point[0], point[1]] = (255, 0, 0)
-        path_image = cv2.circle(path_image, (point[1], point[0]), 5, (255, 0, 0), -1)
-        path_white = cv2.circle(path_white, (point[1], point[0]), 5, 255, -1)
+        path_image = cv2.circle(path_image, (point[1], point[0]), 10, (255, 0, 0), -1)
+        path_white = cv2.circle(path_white, (point[1], point[0]), 10, 255, -1)
 
     path_image = cv2.GaussianBlur(path_image, (33, 33), cv2.BORDER_WRAP)
     path_white = cv2.GaussianBlur(path_white, (33, 33), cv2.BORDER_WRAP)
