@@ -120,54 +120,54 @@ def visualize_path(occ_map: np.array, path: list, directory: str):
     dir_points_map = directory.replace('start_finish', 'start_finish_visualized')
     no_points_map = cv2.cvtColor(occ_map, cv2.COLOR_GRAY2BGR)
     points_map = cv2.imread(dir_points_map)
-    path_image = np.zeros_like(points_map)
-    path_image.fill(255)
+    # path_image = np.zeros_like(points_map)
+    # path_image.fill(255)
     path_white = np.zeros_like(points_map)
     path_white = cv2.cvtColor(path_white, cv2.COLOR_BGR2GRAY)
 
     for point in path:
-        points_map[point[0], point[1]] = (255, 0, 0)
-        path_image = cv2.circle(path_image, (point[1], point[0]), 10, (255, 0, 0), -1)
+        # points_map[point[0], point[1]] = (255, 0, 0)
+        # path_image = cv2.circle(path_image, (point[1], point[0]), 10, (255, 0, 0), -1)
         path_white = cv2.circle(path_white, (point[1], point[0]), 10, 255, -1)
 
-    path_image = cv2.GaussianBlur(path_image, (33, 33), cv2.BORDER_WRAP)
+    # path_image = cv2.GaussianBlur(path_image, (33, 33), cv2.BORDER_WRAP)
     path_white = cv2.GaussianBlur(path_white, (33, 33), cv2.BORDER_WRAP)
 
     for point in path:
         path_white[point[0], point[1]] = 255
 
-    hsv = cv2.cvtColor(path_image, cv2.COLOR_BGR2HSV)
-    lower_blue = np.array([110, 0, 0])
-    upper_blue = np.array([130, 255, 255])
+    # hsv = cv2.cvtColor(path_image, cv2.COLOR_BGR2HSV)
+    # lower_blue = np.array([110, 0, 0])
+    # upper_blue = np.array([130, 255, 255])
 
-    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    # mask = cv2.inRange(hsv, lower_blue, upper_blue)
 
-    gray_points = cv2.cvtColor(points_map, cv2.COLOR_BGR2GRAY)
+    # gray_points = cv2.cvtColor(points_map, cv2.COLOR_BGR2GRAY)
     gray_no_points = cv2.cvtColor(no_points_map, cv2.COLOR_BGR2GRAY)
 
-    thresh_points = cv2.threshold(gray_points, 240, 255, cv2.THRESH_BINARY)[1]
+    # thresh_points = cv2.threshold(gray_points, 240, 255, cv2.THRESH_BINARY)[1]
     thresh_no_points = cv2.threshold(gray_no_points, 240, 255, cv2.THRESH_BINARY)[1]
 
-    not_mask_points = cv2.bitwise_not(thresh_points)
+    # not_mask_points = cv2.bitwise_not(thresh_points)
 
-    mask2_points = mask - not_mask_points
+    # mask2_points = mask - not_mask_points
 
-    img_points_path_masked = cv2.bitwise_and(path_image, path_image, mask=thresh_points)
+    # img_points_path_masked = cv2.bitwise_and(path_image, path_image, mask=thresh_points)
     path_brightness = cv2.bitwise_and(path_white, path_white, mask=thresh_no_points)
 
-    mask2_points_inv = cv2.bitwise_not(mask2_points)
+    # mask2_points_inv = cv2.bitwise_not(mask2_points)
 
-    img_points_masked = cv2.bitwise_and(points_map, points_map, mask=mask2_points_inv)
+    # img_points_masked = cv2.bitwise_and(points_map, points_map, mask=mask2_points_inv)
 
-    result_points = cv2.add(img_points_masked, img_points_path_masked)
+    # result_points = cv2.add(img_points_masked, img_points_path_masked)
 
     dir_save_no_points_map = directory.replace('start_finish', 'paths')
-    dir_save_points_map = dir_save_no_points_map.replace('paths', 'paths_with_points')
+    # dir_save_points_map = dir_save_no_points_map.replace('paths', 'paths_with_points')
 
     cv2.imwrite(dir_save_no_points_map, path_brightness)
     print(dir_save_no_points_map)
-    cv2.imwrite(dir_save_points_map, result_points)
-    print(dir_save_points_map)
+    # cv2.imwrite(dir_save_points_map, result_points)
+    # print(dir_save_points_map)
 
     # cv2.imshow("result_points", result_points)
     # cv2.imshow("result_no_points", path_brightness)

@@ -53,7 +53,7 @@ def draw_start_and_finish(occ_map: np.array, path: str, number: int) -> str:
     new_path = add_to_string(new_path, 'path', str(number))
     new_path = new_path.replace('blanks', 'start_finish')
 
-    visualize_start_finish(occ_map, new_path, x_start, y_start, x_finish, y_finish)
+    # visualize_start_finish(occ_map, new_path, x_start, y_start, x_finish, y_finish)
 
     return new_path
 
