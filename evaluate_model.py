@@ -1,13 +1,7 @@
 import torch
-import numpy as np
-import random
-import os
 
 from pathlib import Path
-from PIL import Image
 from train import UNet_cooler, MapsDataModule, MODEL_PATH
-from torchvision import transforms
-from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 
 BASE_PATH = Path('/home/czarek/mgr/maps')
@@ -21,11 +15,17 @@ model.eval()
 data_module = MapsDataModule(main_path=BASE_PATH)
 data_module.setup("test")
 
-train_dataloader = data_module.train_dataloader()
-val_dataloader = data_module.val_dataloader()
-test_dataloader = data_module.test_dataloader()
+batch_size = 2
+sampler = torch.utils.data.RandomSampler(data_module.train_dataset)
 
-batch = next(iter(train_dataloader))
+dataloader = torch.utils.data.DataLoader(
+    data_module.train_dataset,
+    batch_size=batch_size,
+    sampler=sampler,
+    num_workers=data_module._num_workers
+)
+
+batch = next(iter(dataloader))
 print(batch)
 image, mask, coords = batch
 
