@@ -3,6 +3,7 @@ import torch
 from pathlib import Path
 from train import UNet_cooler, MapsDataModule, MODEL_PATH
 import matplotlib.pyplot as plt
+import numpy as np
 
 BASE_PATH = Path('/home/czarek/mgr/maps')
 
@@ -33,7 +34,7 @@ image, mask, coords = batch
 with torch.no_grad():
     output = model(image, coords)
 
-f, axarr = plt.subplots(1, 3)
+f, axarr = plt.subplots(1, 4)
 x_np = image.detach().cpu().numpy()
 x_np = x_np.transpose((0, 2, 3, 1))
 y_np = mask.detach().cpu().numpy()
@@ -42,6 +43,8 @@ y_hat_np = output.detach().cpu().numpy()
 y_hat_np = y_hat_np.transpose((0, 2, 3, 1))
 axarr[0].imshow(x_np[0])
 axarr[1].imshow(y_np[0])
+clipped = np.clip(y_hat_np[0].copy(), -10, None)
 axarr[2].imshow(y_hat_np[0])
+axarr[3].imshow(clipped)
 plt.show()
 

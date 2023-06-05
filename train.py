@@ -68,7 +68,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 2, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
@@ -124,31 +124,20 @@ class UNet_cooler(pl.LightningModule):
         self.conv4 = self.base_model.layer3
         self.conv5 = self.base_model.layer4
 
-        self.conv_coords5 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+        # Coordinate layers
+        self.conv_coords_512 = nn.Sequential(
             nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.conv_coords4 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+        self.conv_coords_256 = nn.Sequential(
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.conv_coords3 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+        self.conv_coords_128 = nn.Sequential(
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.conv_coords2 = nn.Sequential(
+        self.conv_coords_64 = nn.Sequential(
             nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
@@ -185,18 +174,18 @@ class UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
-        coords2 = self.conv_coords2(coords)
-        coords2 = F.interpolate(coords2, size=x2.size()[2:], mode='bilinear', align_corners=True)
-        x2 = torch.cat((x2, coords2), dim=1)
-        coords3 = self.conv_coords3(coords)
-        coords3 = F.interpolate(coords3, size=x3.size()[2:], mode='bilinear', align_corners=True)
-        x3 = torch.cat((x3, coords3), dim=1)
-        coords4 = self.conv_coords4(coords)
-        coords4 = F.interpolate(coords4, size=x4.size()[2:], mode='bilinear', align_corners=True)
-        x4 = torch.cat((x4, coords4), dim=1)
-        coords5 = self.conv_coords5(coords)
-        coords5 = F.interpolate(coords5, size=x5.size()[2:], mode='bilinear', align_corners=True)
-        x5 = torch.cat((x5, coords5), dim=1)
+        coords_64 = self.conv_coords_64(coords)
+        coords_x2 = F.interpolate(coords_64, size=x2.size()[2:], mode='bilinear', align_corners=True)
+        x2 = torch.cat((x2, coords_x2), dim=1)
+        coords_128 = self.conv_coords_128(coords_64)
+        coords_x3 = F.interpolate(coords_128, size=x3.size()[2:], mode='bilinear', align_corners=True)
+        x3 = torch.cat((x3, coords_x3), dim=1)
+        coords_256 = self.conv_coords_256(coords_128)
+        coords_x4 = F.interpolate(coords_256, size=x4.size()[2:], mode='bilinear', align_corners=True)
+        x4 = torch.cat((x4, coords_x4), dim=1)
+        coords_512 = self.conv_coords_512(coords_256)
+        coords_x5 = F.interpolate(coords_512, size=x5.size()[2:], mode='bilinear', align_corners=True)
+        x5 = torch.cat((x5, coords_x5), dim=1)
 
         # Decoder
         x6 = self.upconv6(x5)
@@ -304,7 +293,7 @@ def test_training():
     )
     early_stopping_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=5,
+        patience=20,
         verbose=True
     )
 
@@ -315,7 +304,7 @@ def test_training():
                          # log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
-                         max_epochs=50)
+                         max_epochs=80)
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
