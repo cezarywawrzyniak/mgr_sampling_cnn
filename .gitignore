@@ -2,6 +2,7 @@ pytorch_tutorial/
 .neptune/
 lightning_logs/
 *.pth
+*.png
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

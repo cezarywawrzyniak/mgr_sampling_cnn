@@ -4,6 +4,8 @@ from pathlib import Path
 from train import UNet_cooler, MapsDataModule, MODEL_PATH
 import matplotlib.pyplot as plt
 import numpy as np
+from torchviz import make_dot
+from torchview import draw_graph
 
 BASE_PATH = Path('/home/czarek/mgr/maps')
 
@@ -33,6 +35,10 @@ image, mask, coords = batch
 
 with torch.no_grad():
     output = model(image, coords)
+    print(model)
+# make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
+
+# model_graph = draw_graph(model, input_data=(image, coords), expand_nested=True, save_graph=True, filename='torchview')
 
 f, axarr = plt.subplots(1, 4)
 x_np = image.detach().cpu().numpy()
