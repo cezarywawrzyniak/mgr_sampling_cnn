@@ -112,9 +112,6 @@ class RRTStar:
         for dis_int in to_check:
             y = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
             x = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
-            # chat suggestion
-            # y = int(point1[1] + ((dis_int * (point2[1] - point1[1])) / dist))
-            # x = int(point1[0] + ((dis_int * (point2[0] - point1[0])) / dist))
             # print(y, x)
             if self.occ_map[y, x] == 0:
                 return False
@@ -179,15 +176,13 @@ class RRTStar:
 
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
-                    # TODO
-                    # SHOULD IT REALLY BREAK HERE? I DON'T THINK SO BECAUSE IT CAN STILL FIND A BETTER PATH.
-                    # I GUESS IT DEPENDS ON WHETHER WE WANT TO FIND A PATH OR THE BEST PATH POSSIBLE WITHIN MAX_ITER
+                    # Break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
 
-        if goal_node is None:
-            goal_node = self.best_node
-            # return None  # Goal not reached
+        if goal_node is None:  # Goal not reached
+            goal_node = self.best_node  # Take the closest node to goal TODO should be checked for obstacle
+            # return None
 
         # Find the best path from the goal to the start
         path = self.find_path(goal_node)
