@@ -18,7 +18,7 @@ model.eval()
 data_module = MapsDataModule(main_path=BASE_PATH)
 data_module.setup("test")
 
-batch_size = 2
+batch_size = 1
 sampler = torch.utils.data.RandomSampler(data_module.train_dataset)
 
 dataloader = torch.utils.data.DataLoader(
@@ -29,13 +29,18 @@ dataloader = torch.utils.data.DataLoader(
 )
 
 batch = next(iter(dataloader))
-print(batch)
+# print(batch)
 image, mask, coords = batch
-
+print(coords.data.tolist()[0][0])
+image_show = image.detach().cpu().numpy()
+image_show = image_show.transpose((0, 2, 3, 1))
+# print(image_show)
+# plt.imshow(image_show[0])
+# plt.show()
 
 with torch.no_grad():
     output = model(image, coords)
-    print(model)
+    # print(model)
 # make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
 
 # model_graph = draw_graph(model, input_data=(image, coords), expand_nested=True, save_graph=True, filename='torchview')
