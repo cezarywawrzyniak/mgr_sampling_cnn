@@ -42,12 +42,12 @@ class Node:
 
 
 class RRTStar:
-    def __init__(self, occ_map, start, goal, max_iterations, max_step_size, nearby_nodes_radius, goal_threshold):
+    def __init__(self, occ_map, start, goal, max_iterations, goal_threshold):
         self.start_node = Node(start)
         self.goal = goal
         self.max_iterations = max_iterations
-        self.max_step_size = max_step_size
-        self.radius = nearby_nodes_radius
+        self.iteration_no = None
+        self.search_radius = None
         self.goal_threshold = goal_threshold
         self.nodes = [self.start_node]
         self.occ_map = occ_map
@@ -75,13 +75,13 @@ class RRTStar:
         return nearest_node
 
     def steer(self, from_node, to_point):
-        # vector to new node
+        # vector to new nodeq
         direction = (to_point[0] - from_node.position[0], to_point[1] - from_node.position[1])
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
 
         # scaling down the vector if it exceeds max_step_size
-        if dist > self.max_step_size:
-            direction = (direction[0] * self.max_step_size / dist, direction[1] * self.max_step_size / dist)
+        if dist > self.search_radius:
+            direction = (direction[0] * self.search_radius / dist, direction[1] * self.search_radius / dist)
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
@@ -119,22 +119,30 @@ class RRTStar:
         return True
 
     def rewire_tree(self, new_node):
-        nearby_nodes = self.find_nearby_nodes(new_node, self.radius)
+        nearby_nodes = self.find_nearby_nodes(new_node)
+
+        for nearby_node in nearby_nodes:
+            new_cost = nearby_node.cost + distance.euclidean(nearby_node.position, new_node.position)
+            if new_cost < new_node.cost:
+                if self.is_collision_free(nearby_node.position, new_node.position):
+                    new_node.parent.children.remove(new_node)
+                    new_node.parent = nearby_node
+                    nearby_node.children.append(new_node)
+                    new_node.cost = new_cost
 
         for node in nearby_nodes:
-            new_cost = new_node.cost + distance.euclidean(node.position, new_node.position)
-            if new_cost < node.cost:
-                if self.is_collision_free(node.position, new_node.position):
+            redone_cost = new_node.cost + distance.euclidean(new_node.position, node.position)
+            if redone_cost < node.cost:
+                if self.is_collision_free(new_node.position, node.position):
                     node.parent.children.remove(node)
                     node.parent = new_node
                     new_node.children.append(node)
-                    node.cost = new_cost
+                    node.cost = redone_cost
 
-    def find_nearby_nodes(self, node, radius):
+    def find_nearby_nodes(self, node):
         nearby_nodes = []
         for other_node in self.nodes:
-            distance.euclidean(node.position, other_node.position)
-            if distance.euclidean(node.position, other_node.position) <= radius:
+            if distance.euclidean(node.position, other_node.position) <= self.search_radius:
                 nearby_nodes.append(other_node)
         return nearby_nodes
 
@@ -157,12 +165,26 @@ class RRTStar:
         path.reverse()  # Reverse the path to start from the start node
         return path
 
+    def lebesgue_measure(self, dim):
+        return math.pow(math.pi, dim / 2.0) / math.gamma((dim / 2.0) + 1)
+
+    def search_space_volume(self):
+        return self.map_width * self.map_height
+
+    def compute_search_radius(self, dim):
+        return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
+                    math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
+
     def rrt_star(self):
         goal_node = None
 
-        for _ in range(self.max_iterations):
-            print("ITERATION:", _)
+        for i in range(self.max_iterations):
+            self.iteration_no = i + 1
+            self.search_radius = self.compute_search_radius(dim=2)
+            print("ITERATION:", self.iteration_no)
             print("BEST DISTANCE:", self.best_distance)
+            print("MAX STEP SIZE:", self.search_radius)
+
             random_sample = self.generate_random_sample()
             nearest_neighbor = self.find_nearest_neighbor(random_sample)
             # print("NEAREST_NEIGBOR", nearest_neighbor.position)
@@ -176,6 +198,7 @@ class RRTStar:
 
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
+                    goal_node.position = self.goal
                     # Break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
@@ -250,9 +273,7 @@ class RRTStar:
 
 def generate_paths():
     MAX_ITERATIONS = 5000
-    MAX_STEP_SIZE = 100.0
-    NEARBY_NODES_RADIUS = 80.0
-    GOAL_THRESHOLD = 20.0
+    GOAL_THRESHOLD = 5.0
     maps = get_blank_maps_list()
     finished = False
     for map_path in maps:
@@ -261,7 +282,7 @@ def generate_paths():
         start, finish = get_start_finish_coordinates(map_path)
 
         rrt = RRTStar(occ_map=occ_map, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
-                      max_step_size=MAX_STEP_SIZE, nearby_nodes_radius=NEARBY_NODES_RADIUS, goal_threshold=GOAL_THRESHOLD)
+                      goal_threshold=GOAL_THRESHOLD)
         path = rrt.rrt_star()
 
         finished = True
