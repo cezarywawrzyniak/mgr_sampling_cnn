@@ -1,7 +1,6 @@
 import torch
 import random
 import math
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
@@ -11,7 +10,8 @@ from time import perf_counter
 from train import UNet_cooler, MapsDataModule, MODEL_PATH
 
 BASE_PATH = Path('/home/czarek/mgr/maps')
-# np.set_printoptions(threshold=sys.maxsize)
+MAX_ITERATIONS = 5000
+GOAL_THRESHOLD = 5.0
 
 
 def get_blank_maps_list() -> list:
@@ -38,7 +38,7 @@ def get_from_string(path: str, start: str, finish: str) -> str:
 
 
 class Node:
-    def __init__(self, position, cost=0):
+    def __init__(self, position: tuple[int, int], cost: float = 0.0):
         self.position = position
         self.parent = None
         self.children = []
@@ -46,69 +46,60 @@ class Node:
 
 
 class RRTStar:
-    def __init__(self, occ_map, heat_map, start, goal, max_iterations, max_step_size, nearby_nodes_radius,
-                 goal_threshold, neural_bias):
+    def __init__(self, occ_map: np.array, heat_map: np.array, start: tuple[int, int], goal: tuple[int, int],
+                 max_iterations: int, goal_threshold: float, neural_bias: float):
         self.start_node = Node(start)
         self.goal = goal
         self.max_iterations = max_iterations
-        self.max_step_size = max_step_size
-        self.radius = nearby_nodes_radius
+        self.iteration_no = None
+        self.search_radius = None
         self.goal_threshold = goal_threshold
         self.nodes = [self.start_node]
         self.occ_map = np.dot(occ_map[..., :3], [0.2989, 0.5870, 0.1140])
-        self.heat_map = heat_map + 10
-        self.map_height, self.map_width, _ = occ_map.shape
+        self.map_height, self.map_width = self.occ_map.shape
         self.best_distance = float('inf')
         self.best_node = None
         self.neural_bias = neural_bias
+        self.heat_map = heat_map + 10
 
-    def generate_random_sample(self):
+    def generate_random_sample(self) -> tuple[int, int]:
         while True:
             x = random.randint(0, self.map_width - 1)
             y = random.randint(0, self.map_height - 1)
             if self.occ_map[y, x] != 0:
                 return y, x
 
-    def generate_neural_sample(self):
-        # print("______________________________________________________________________________________________________")
+    def generate_neural_sample(self) -> tuple[int, int]:
         # Flatten the heatmap to a 1D array
         flat_heatmap = self.heat_map.flatten()
-        # print(flat_heatmap)
 
         # Add a constant to shift the values to be non-negative
         # shifted_heatmap = flat_heatmap - np.min(flat_heatmap) + 1e-6
         shifted_heatmap = flat_heatmap - np.min(flat_heatmap)
-        # print(shifted_heatmap)
 
         # Calculate the weights by taking the exponential of the shifted heatmap
         # weights = np.exp(shifted_heatmap)
         weights = shifted_heatmap
-        # print(weights)
 
         # Normalize the weights to sum up to 1
         normalized_weights = weights / np.sum(weights)
-        # print(normalized_weights)
 
         # Generate a random value between 0 and 1
         random_value = random.uniform(0, 1)
-        # print(random_value)
 
         # Calculate the cumulative weights
         cumulative_weights = np.cumsum(normalized_weights)
-        # print(cumulative_weights)
 
         # Find the index where the random value falls in the cumulative weights
         index = np.searchsorted(cumulative_weights, random_value)
-        # print(index)
 
         # Convert the index back to 2D coordinates
         height, width, _ = self.heat_map.shape
         heat_map_shape = height, width
         y, x = np.unravel_index(index-1, heat_map_shape)
-        # print("______________________________________________________________________________________________________")
         return y, x
 
-    def find_nearest_neighbor(self, sample):
+    def find_nearest_neighbor(self, sample) -> Node:
         nearest_node = None
         min_dist = float('inf')
 
@@ -120,14 +111,14 @@ class RRTStar:
 
         return nearest_node
 
-    def steer(self, from_node, to_point):
+    def steer(self, from_node: Node, to_point: tuple[int, int]) -> Node:
         # vector to new node
         direction = (to_point[0] - from_node.position[0], to_point[1] - from_node.position[1])
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
 
         # scaling down the vector if it exceeds max_step_size
-        if dist > self.max_step_size:
-            direction = (direction[0] * self.max_step_size / dist, direction[1] * self.max_step_size / dist)
+        if dist > self.search_radius:
+            direction = (direction[0] * self.search_radius / dist, direction[1] * self.search_radius / dist)
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
@@ -138,7 +129,7 @@ class RRTStar:
 
         return new_node
 
-    def connect_nodes(self, from_node, to_node):
+    def can_connect_nodes(self, from_node: Node, to_node: Node) -> bool:
         if self.is_collision_free(from_node.position, to_node.position):
             from_node.children.append(to_node)
             to_node.parent = from_node
@@ -146,53 +137,62 @@ class RRTStar:
         else:
             return False
 
-    def is_collision_free(self, point1, point2):
+    def is_collision_free(self, point1: tuple[int, int], point2: tuple[int, int]) -> bool:
+        # get distance between points and 100 point between them within that distance
         dist = np.linalg.norm(np.array(point1) - np.array(point2))
         to_check = np.linspace(0, dist, num=100)
-        # print(point1)
-        # print(point2)
-        # print(to_check)
+
         if point1 == point2:
             return False
 
+        # check every calculated point between point1 and point2 for obstacle
         for dis_int in to_check:
             y = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
             x = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
-            # print(y, x)
             if self.occ_map[y, x] == 0:
                 return False
 
         return True
 
-    def rewire_tree(self, new_node):
-        nearby_nodes = self.find_nearby_nodes(new_node, self.radius)
+    def rewire_tree(self, new_node: Node):
+        # get list of nearby nodes
+        nearby_nodes = self.find_nearby_nodes(new_node)
 
+        # check if there is a better path to the new node from the nodes in the list, replace when lower cost
+        for nearby_node in nearby_nodes:
+            new_cost = nearby_node.cost + distance.euclidean(nearby_node.position, new_node.position)
+            if new_cost < new_node.cost:
+                if self.is_collision_free(nearby_node.position, new_node.position):
+                    new_node.parent.children.remove(new_node)
+                    new_node.parent = nearby_node
+                    nearby_node.children.append(new_node)
+                    new_node.cost = new_cost
+
+        # check if there is a better bath to one of the nodes in the list from the new node, replace when lower cost
         for node in nearby_nodes:
-            new_cost = new_node.cost + distance.euclidean(node.position, new_node.position)
-            if new_cost < node.cost:
-                if self.is_collision_free(node.position, new_node.position):
+            redone_cost = new_node.cost + distance.euclidean(new_node.position, node.position)
+            if redone_cost < node.cost:
+                if self.is_collision_free(new_node.position, node.position):
                     node.parent.children.remove(node)
                     node.parent = new_node
                     new_node.children.append(node)
-                    node.cost = new_cost
+                    node.cost = redone_cost
 
-    def find_nearby_nodes(self, node, radius):
+    def find_nearby_nodes(self, node: Node) -> list[Node]:
         nearby_nodes = []
         for other_node in self.nodes:
-            distance.euclidean(node.position, other_node.position)
-            if distance.euclidean(node.position, other_node.position) <= radius:
+            if distance.euclidean(node.position, other_node.position) <= self.search_radius:
                 nearby_nodes.append(other_node)
         return nearby_nodes
 
-    def goal_reached(self, node, goal):
+    def goal_reached(self, node: Node, goal: tuple[int, int]) -> bool:
         dist = distance.euclidean(node.position, goal)
-        # print(dist)
         if dist < self.best_distance:
             self.best_distance = dist
             self.best_node = node
         return dist <= self.goal_threshold
 
-    def find_path(self, goal):
+    def find_path(self, goal: tuple[int, int]) -> list[tuple[int, int]]:
         path = []
         current_node = goal
 
@@ -203,12 +203,25 @@ class RRTStar:
         path.reverse()  # Reverse the path to start from the start node
         return path
 
-    def rrt_star(self):
+    def lebesgue_measure(self, dim: int) -> float:
+        return math.pow(math.pi, dim/2.0) / math.gamma((dim/2.0) + 1)
+
+    def search_space_volume(self) -> float:
+        return self.map_width * self.map_height
+
+    def compute_search_radius(self, dim: int) -> float:
+        return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
+                    math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
+
+    def rrt_star(self) -> list[tuple[int, int]]:
         goal_node = None
 
-        for _ in range(self.max_iterations):
-            print("ITERATION:", _)
+        for i in range(self.max_iterations):
+            self.iteration_no = i + 1
+            self.search_radius = self.compute_search_radius(dim=2)
+            print("ITERATION:", self.iteration_no)
             print("BEST DISTANCE:", self.best_distance)
+            print("SEARCH RADIUS:", self.search_radius)
 
             if random.random() < self.neural_bias:
                 random_sample = self.generate_neural_sample()
@@ -216,17 +229,14 @@ class RRTStar:
                 random_sample = self.generate_random_sample()
 
             nearest_neighbor = self.find_nearest_neighbor(random_sample)
-            # print("NEAREST_NEIGBOR", nearest_neighbor.position)
-            # print("NEAREST_NEIGBOR", nearest_neighbor.cost)
             new_node = self.steer(nearest_neighbor, random_sample)
-            # print("NEW_NODE", new_node.position)
-            # print("NEW_NODE", new_node.cost)
 
-            if self.connect_nodes(nearest_neighbor, new_node):
+            if self.can_connect_nodes(nearest_neighbor, new_node):
                 self.rewire_tree(new_node)
 
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
+                    goal_node.position = self.goal
                     # Break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
@@ -239,7 +249,7 @@ class RRTStar:
         path = self.find_path(goal_node)
         return path
 
-    def visualize_tree(self, mask):
+    def visualize_tree(self, mask: np.array):
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
@@ -270,7 +280,7 @@ class RRTStar:
         plt.title('RRT* Tree Visualization')
         plt.show()
 
-    def visualize_path(self, path, mask):
+    def visualize_path(self, path: list[tuple[int, int]], mask: np.array):
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
@@ -308,11 +318,6 @@ class RRTStar:
 
 
 def generate_paths():
-    MAX_ITERATIONS = 5000
-    MAX_STEP_SIZE = 20.0
-    NEARBY_NODES_RADIUS = 10.0
-    GOAL_THRESHOLD = 5.0
-
     model = UNet_cooler()
     model.load_state_dict(torch.load(MODEL_PATH))
 
@@ -357,8 +362,7 @@ def generate_paths():
     finish = (y_finish, x_finish)
 
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
-                  max_step_size=MAX_STEP_SIZE, nearby_nodes_radius=NEARBY_NODES_RADIUS, goal_threshold=GOAL_THRESHOLD,
-                  neural_bias=0.5)
+                         goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
     path = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
 
@@ -368,12 +372,9 @@ def generate_paths():
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
 
-    # print(f'Calculation time of neural RRT: {timer_neural_stop-timer_neural_start}')
-    # -----------------------------------------------------------------------------------------------------------------
     timer_rrt_start = perf_counter()
     rrt = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
-                  max_step_size=MAX_STEP_SIZE, nearby_nodes_radius=NEARBY_NODES_RADIUS, goal_threshold=GOAL_THRESHOLD,
-                  neural_bias=-1.0)
+                  goal_threshold=GOAL_THRESHOLD, neural_bias=0.0)
     path = rrt.rrt_star()
     timer_rrt_stop = perf_counter()
 
@@ -383,8 +384,8 @@ def generate_paths():
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
 
-    print(f'Calculation time of neural RRT: {timer_neural_stop - timer_neural_start}')
-    print(f'Calculation time of normal RRT: {timer_rrt_stop - timer_rrt_start}')
+    print(f'Calculation time of neural RRT*: {timer_neural_stop - timer_neural_start}')
+    print(f'Calculation time of RRT*: {timer_rrt_stop - timer_rrt_start}')
 
 
 if __name__ == '__main__':
