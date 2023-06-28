@@ -4,6 +4,7 @@ from pathlib import Path
 from train import UNet_cooler, MapsDataModule, MODEL_PATH
 import matplotlib.pyplot as plt
 import numpy as np
+from torch import nn
 from torchviz import make_dot
 from torchview import draw_graph
 
@@ -40,6 +41,7 @@ image_show = image_show.transpose((0, 2, 3, 1))
 
 with torch.no_grad():
     output = model(image, coords)
+    clipped = torch.clamp(output, min=-10, max=1)
     # print(model)
 # make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
 
@@ -52,10 +54,11 @@ y_np = mask.detach().cpu().numpy()
 y_np = y_np.transpose((0, 2, 3, 1))
 y_hat_np = output.detach().cpu().numpy()
 y_hat_np = y_hat_np.transpose((0, 2, 3, 1))
+clipped = clipped.detach().cpu().numpy()
+clipped = clipped.transpose((0, 2, 3, 1))
 axarr[0].imshow(x_np[0])
 axarr[1].imshow(y_np[0])
-clipped = np.clip(y_hat_np[0].copy(), -10, None)
 axarr[2].imshow(y_hat_np[0])
-axarr[3].imshow(clipped)
+axarr[3].imshow(clipped[0])
 plt.show()
 

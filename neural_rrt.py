@@ -60,7 +60,7 @@ class RRTStar:
         self.best_distance = float('inf')
         self.best_node = None
         self.neural_bias = neural_bias
-        self.heat_map = heat_map + 10
+        self.heat_map = heat_map[0] + 10
 
     def generate_random_sample(self) -> tuple[int, int]:
         while True:
@@ -350,9 +350,10 @@ def generate_paths():
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
-    y_hat_np = output.detach().cpu().numpy()
-    y_hat_np = y_hat_np.transpose((0, 2, 3, 1))
-    clipped = np.clip(y_hat_np[0].copy(), -10, None)
+        clipped = torch.clamp(output, min=-10, max=1)
+
+    clipped = clipped.detach().cpu().numpy()
+    clipped = clipped.transpose((0, 2, 3, 1))
 
     x_start = coords.data.tolist()[0][0][0][0]
     y_start = coords.data.tolist()[0][0][0][1]
