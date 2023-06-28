@@ -48,7 +48,7 @@ def generate_maps():
     for map_no in range(0, 10):  # CHANGE NUMBER OF GENERATED MAPS
         save_path = f'/home/czarek/mgr/maps/blanks/map_{map_no}_path_sx_sy_fx_fy.png'
         occ_map = create_map(512, 512)
-        show_map(occ_map)  # SHOW
+        # show_map(occ_map)  # SHOW
         cv2.imwrite(save_path, occ_map)
 
 
