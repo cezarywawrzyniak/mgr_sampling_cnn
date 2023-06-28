@@ -15,17 +15,17 @@ def create_map(width: int, height: int) -> np.array:
     occ_map[:, -1] = 0
 
     # fill with obstacles
-    for i in range(0, 5):
-        occ_map = add_obstacle(occ_map, 50, 300, 10, 50)  # long in x
+    for i in range(0, random.randint(2, 7)):
+        occ_map = add_obstacle(occ_map, 75, 350, 25, 75)  # long in x
 
-    for i in range(0, 5):
-        occ_map = add_obstacle(occ_map, 10, 50, 50, 300)  # long in y
+    for i in range(0, random.randint(2, 7)):
+        occ_map = add_obstacle(occ_map, 25, 75, 75, 350)  # long in y
 
-    for i in range(0, 2):
-        occ_map = add_obstacle(occ_map, 50, 150, 50, 150)  # symmetrical big
+    for i in range(0, random.randint(1, 3)):
+        occ_map = add_obstacle(occ_map, 75, 175, 75, 175)  # symmetrical big
 
-    for i in range(0, 10):
-        occ_map = add_obstacle(occ_map, 10, 100, 10, 100)  # symmetrical small
+    for i in range(0, random.randint(5, 15)):
+        occ_map = add_obstacle(occ_map, 25, 125, 25, 125)  # symmetrical small
 
     return occ_map
 
@@ -45,10 +45,10 @@ def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: i
 
 
 def generate_maps():
-    for map_no in range(0, 10000):
+    for map_no in range(0, 10):  # CHANGE NUMBER OF GENERATED MAPS
         save_path = f'/home/czarek/mgr/maps/blanks/map_{map_no}_path_sx_sy_fx_fy.png'
         occ_map = create_map(512, 512)
-        # show_map(occ_map)
+        show_map(occ_map)  # SHOW
         cv2.imwrite(save_path, occ_map)
 
 

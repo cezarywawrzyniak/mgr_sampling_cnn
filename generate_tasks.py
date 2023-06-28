@@ -53,7 +53,7 @@ def draw_start_and_finish(occ_map: np.array, path: str, number: int) -> str:
     new_path = add_to_string(new_path, 'path', str(number))
     new_path = new_path.replace('blanks', 'start_finish')
 
-    # visualize_start_finish(occ_map, new_path, x_start, y_start, x_finish, y_finish)
+    visualize_start_finish(occ_map, new_path, x_start, y_start, x_finish, y_finish)  # VISUAL
 
     return new_path
 
@@ -67,9 +67,9 @@ def visualize_start_finish(occ_map: np.array, path: str, x_start: int, y_start: 
 
     color_map = cv2.circle(color_map, start_coordinates, 5, (0, 255, 0), -1)
     color_map = cv2.circle(color_map, finish_coordinates, 5, (0, 0, 255), -1)
-    # cv2.imshow("Occupancy Map", color_map)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    # cv2.imshow("Occupancy Map", color_map)  # SHOW
+    # cv2.waitKey(0)  # SHOW
+    # cv2.destroyAllWindows()  # SHOW
     cv2.imwrite(color_path, color_map)
 
 
