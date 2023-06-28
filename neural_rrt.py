@@ -7,9 +7,10 @@ from scipy.spatial import distance
 from pathlib import Path
 from time import perf_counter
 
-from train import UNet_cooler, MapsDataModule, MODEL_PATH
+from train import UNet_cooler, MapsDataModule
 
-BASE_PATH = Path('/home/czarek/mgr/maps')
+BASE_PATH = Path('/home/czarek/mgr/eval_data')
+MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol2.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 5.0
 

@@ -20,7 +20,7 @@ from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-MODEL_PATH = "sampling_cnn.pth"
+MODEL_PATH = "sampling_cnn_vol3.pth"
 
 
 class MapsDataset(Dataset):
