@@ -68,7 +68,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 4, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
@@ -143,25 +143,25 @@ class UNet_cooler(pl.LightningModule):
         )
 
         # Decoder
-        self.upconv6 = nn.ConvTranspose2d(512+512, 256, kernel_size=2, stride=2)
+        self.upconv6 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
-            nn.Conv2d(768, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(1024, 512, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv7 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
         self.conv7 = nn.Sequential(
-            nn.Conv2d(384, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv8 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.conv8 = nn.Sequential(
-            nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(192, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
@@ -293,7 +293,7 @@ def test_training():
     )
     early_stopping_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=20,
+        patience=10,
         verbose=True
     )
 
@@ -301,10 +301,10 @@ def test_training():
                          logger=neptune,
                          accelerator='gpu',
                          fast_dev_run=False,
-                         # log_every_n_steps=3,
+                         log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
-                         max_epochs=80)
+                         max_epochs=100)
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
