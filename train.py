@@ -68,7 +68,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 4, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
