@@ -33,6 +33,7 @@ occ_map = np.load(file_path)
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 indices = np.nonzero(occ_map)
+print(indices)
 ax.scatter(indices[0], indices[1], indices[2], c='b', marker='o')
 # Set plot limits based on the image dimensions
 ax.set_xlim(0, occ_map.shape[0])
