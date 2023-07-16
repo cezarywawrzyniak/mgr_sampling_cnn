@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from mpl_toolkits.mplot3d import Axes3D
 
 if len(sys.argv) != 2:
     print("Usage: python script.py folder_directory")
@@ -41,10 +40,6 @@ occupied_mask = downsampled_occ_map.astype(bool)
 # Create a color array for the occupied places (set to black)
 color = np.zeros(downsampled_occ_map.shape + (4,))
 color[occupied_mask] = (0, 0, 0, 0.2)  # Set RGB values to (0, 0, 0) and alpha (transparency) to 0.5
-
-# Create a color array for the occupied places (set to black)
-color_frame = np.zeros(downsampled_occ_map.shape + (4,))
-color_frame[occupied_mask] = (0, 0, 0, 0.2)  # Set RGB values to (0, 0, 0) and alpha (transparency) to 0.5
 
 # Visualize the 3D occupancy map with semi-transparent objects (without wireframe edges)
 fig = plt.figure()

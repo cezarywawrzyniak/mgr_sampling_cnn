@@ -1,14 +1,15 @@
 import torch
 
 from pathlib import Path
-from train import UNet_cooler, MapsDataModule, MODEL_PATH
+from train import UNet_cooler, MapsDataModule
 import matplotlib.pyplot as plt
 import numpy as np
 from torch import nn
 from torchviz import make_dot
 from torchview import draw_graph
 
-BASE_PATH = Path('/home/czarek/mgr/maps')
+MODEL_PATH = "sampling_cnn_vol2.pth"
+BASE_PATH = Path('/home/czarek/mgr/eval_data')
 
 model = UNet_cooler()
 model.load_state_dict(torch.load(MODEL_PATH))

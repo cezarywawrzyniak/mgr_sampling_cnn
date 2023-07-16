@@ -4,7 +4,7 @@ import numpy as np
 
 def create_map(width: int, height: int, depth: int) -> np.array:
     # Create a white map
-    occ_map = np.zeros((height, width, depth), dtype=bool)
+    occ_map = np.zeros((height, width, depth), dtype=float)
 
     # Fill with obstacles
     for _ in range(random.randint(1, 2)):
@@ -36,14 +36,14 @@ def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: i
     z_end = random.randint(z_start + z_min, z_start + z_max)
 
     # Add obstacle
-    occ_map[x_start:x_end, y_start:y_end, z_start:z_end] = True
+    occ_map[x_start:x_end, y_start:y_end, z_start:z_end] = 255
 
     return occ_map
 
 
 def generate_maps():
     for map_no in range(10):  # CHANGE NUMBER OF GENERATED MAPS
-        save_path = f'/home/czarek/mgr/3D_maps/blanks/map_{map_no}_path_sx_sy_fx_fy.npy'
+        save_path = f'/home/czarek/mgr/3D_maps/blanks/map_{map_no}_path_sx_sy_sz_fx_fy_fz.npy'
         occ_map = create_map(128, 128, 128)  # Update dimensions for width, height, and depth
         np.save(save_path, occ_map)
 
