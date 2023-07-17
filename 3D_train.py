@@ -20,7 +20,7 @@ from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-MODEL_PATH = "sampling_cnn_vol3.pth"
+MODEL_PATH = "3D_sampling_cnn.pth"
 
 
 class MapsDataset(Dataset):
@@ -40,7 +40,6 @@ class MapsDataset(Dataset):
         read_image = Image.open(self._main_path / 'images' / img_name)
         read_image = read_image.convert('RGB')
         image = np.asarray(read_image)
-        image = (image - image.min()) / (image.max() - image.min())
         # print("IMAGE:")
         # print(self._main_path / 'images' / img_name)
 
@@ -69,7 +68,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 1, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
@@ -241,7 +240,7 @@ def test_dataset():
     ])
 
     # create dataset instance
-    base_path = Path('/home/czarek/mgr/data/train')
+    base_path = Path('/home/czarek/mgr/3D_maps/one_example/')
     images_names = [image_path.name
                     for image_path in sorted((base_path / 'images').iterdir())]
     dataset = MapsDataset(base_path, images_names, transforms=transform)
@@ -283,10 +282,10 @@ def test_training():
 
     model = UNet_cooler()
 
-    neptune = pl.loggers.neptune.NeptuneLogger(
-        api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
-        project='czarkoman/mgr-sampling-cnn'
-    )
+    # neptune = pl.loggers.neptune.NeptuneLogger(
+    #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
+    #     project='czarkoman/mgr-sampling-cnn'
+    # )
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename='{epoch}-{val_loss:.3f}',
@@ -299,9 +298,9 @@ def test_training():
     )
 
     trainer = pl.Trainer(
-                         logger=neptune,
+                         # logger=neptune,
                          accelerator='gpu',
-                         fast_dev_run=False,
+                         fast_dev_run=True,
                          log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
@@ -309,7 +308,7 @@ def test_training():
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
-    neptune.run.stop()
+    # neptune.run.stop()
 
     torch.save(model.state_dict(), MODEL_PATH)
 
