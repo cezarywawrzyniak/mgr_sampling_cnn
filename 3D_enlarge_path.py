@@ -2,7 +2,7 @@ import numpy as np
 import glob
 
 LAYERS = 5
-MAPS_DIRECTORY = f'/home/czarek/mgr/3D_maps/one_example/paths/*.npy'
+MAPS_DIRECTORY = f'/home/czarek/mgr/3D_maps/paths/*.npy'
 
 
 def is_point_valid(point, occ_map):
