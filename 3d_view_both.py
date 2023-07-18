@@ -23,7 +23,7 @@ visualized_image = np.array(occ_map)
 
 # Obtain the indices of the path positions
 indices = np.nonzero(visualized_image == 255)
-ax.scatter(indices[0], indices[1], indices[2], c='b', marker='o')
+ax.scatter(indices[0], indices[1], indices[2], c='r', marker='o')
 
 path_indices = np.nonzero(path)
 print(path_indices)

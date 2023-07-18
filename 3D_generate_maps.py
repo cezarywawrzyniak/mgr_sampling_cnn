@@ -6,7 +6,7 @@ def create_map(width: int, height: int, depth: int) -> np.array:
     # Create a white map
     occ_map = np.zeros((height, width, depth), dtype=float)
 
-    # Fill with obstacles
+    # Fill with obstacles, for map size 128: 15 40 75
     for _ in range(random.randint(1, 2)):
         occ_map = add_obstacle(occ_map, 10, 47, 10, 10, 10, 10)  # Long in x
 

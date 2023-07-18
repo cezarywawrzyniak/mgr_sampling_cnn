@@ -76,7 +76,7 @@ def generate_paths():
     for path_path in maps:
         occ_path = path_path.replace('paths', 'start_finish')
         # print(occ_path)
-        # print(path_path)
+        print(path_path)
         enlarge_the_path(occ_path, path_path)
 
 
