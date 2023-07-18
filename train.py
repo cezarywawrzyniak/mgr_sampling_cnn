@@ -21,6 +21,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 
 MODEL_PATH = "sampling_cnn_vol3.pth"
+# os.environ['TORCH_HOME'] = '/app/.cache'
 
 
 class MapsDataset(Dataset):

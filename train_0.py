@@ -20,7 +20,7 @@ from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-MODEL_PATH = "3D_sampling_cnn.pth"
+MODEL_PATH = "sampling_cnn_vol3.pth"
 # os.environ['TORCH_HOME'] = '/app/.cache'
 
 
@@ -38,22 +38,25 @@ class MapsDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         img_name = self._img_names[index]
 
-        # print("IMAGE:")
-        # print(f'{self._main_path}/images/{img_name}')
-        image = np.load(f'{self._main_path}/images/{img_name}')
+        read_image = Image.open(self._main_path / 'images' / img_name)
+        read_image = read_image.convert('RGB')
+        image = np.asarray(read_image)
         image = (image - image.min()) / (image.max() - image.min())
+        # print("IMAGE:")
+        # print(self._main_path / 'images' / img_name)
 
-        # print("MASK:")
-        # print(f'{self._main_path}/masks/{img_name}')
-        mask = np.load(f'{self._main_path}/masks/{img_name}')
+        read_mask = Image.open(self._main_path / 'masks' / img_name)
+        mask = np.asarray(read_mask)
         mask = (mask - mask.min()) / (mask.max() - mask.min())  # normalization 0-255
+        # print("MASK:")
+        # print(self._main_path / 'masks' / img_name)
 
         # extract start and finish coordinates from the filename
         file_name = os.path.splitext(img_name)[0]
         filename_parts = file_name.split('_')
-        start_x, start_y, start_z = int(filename_parts[3][2:]), int(filename_parts[4][2:]), int(filename_parts[5][2:])
-        finish_x, finish_y, finish_z = int(filename_parts[6][2:]), int(filename_parts[7][2:]), int(filename_parts[8][2:])
-        coords = [[start_x, start_y, start_z], [finish_x, finish_y, finish_z]]
+        start_x, start_y = int(filename_parts[3][2:]), int(filename_parts[4][2:])
+        finish_x, finish_y = int(filename_parts[5][2:]), int(filename_parts[6][2:])
+        coords = [[start_x, start_y], [finish_x, finish_y]]
         coords = transforms.ToTensor()(np.array(coords))
 
         transformed = self._transforms(image=image, mask=mask)
@@ -67,8 +70,8 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/3D_maps/train/'), batch_size: int = 2, test_size=0.15,
-                 num_workers=1):
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/data/train'), batch_size: int = 3, test_size=0.15,
+                 num_workers=16):
         super().__init__()
         self._main_path = main_path
         self._batch_size = batch_size
@@ -103,17 +106,21 @@ class MapsDataModule(pl.LightningDataModule):
         return DataLoader(self.val_dataset, batch_size=self._batch_size)
 
 
-class ThreeD_UNet_cooler(pl.LightningModule):
+class UNet_cooler(pl.LightningModule):
     def __init__(self):
-        super(ThreeD_UNet_cooler, self).__init__()
+        super(UNet_cooler, self).__init__()
 
         self.loss = nn.BCEWithLogitsLoss()
 
-        self.base_model = models.video.r3d_18(pretrained=True)
-        self.base_model.stem[0] = nn.Conv3d(1, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2), padding=(1, 3, 3))
+        self.base_model = models.resnet18(pretrained=True)
 
         # Encoder
-        self.conv1 = self.base_model.stem
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
         self.conv2 = self.base_model.layer1
         self.conv3 = self.base_model.layer2
         self.conv4 = self.base_model.layer3
@@ -138,34 +145,30 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         )
 
         # Decoder
-        self.upconv6 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
+        self.upconv6 = nn.ConvTranspose2d(512+512, 256, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
-            nn.Conv2d(1024, 512, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(768, 512, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv7 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
         self.conv7 = nn.Sequential(
-            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(384, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.upconv8 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.conv8 = nn.Sequential(
-            nn.Conv2d(192, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(192, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x, coords):
-        # Reshape input so it is (batch_size, channels, depth, height, width) = (batch_size, 1, 80, 80, 80)
-        x = x.unsqueeze(1)
-        # print(x.size())
-
         # Encoder
         x1 = self.conv1(x)
         x2 = self.conv2(x1)
@@ -239,7 +242,7 @@ def test_dataset():
     ])
 
     # create dataset instance
-    base_path = Path('/home/czarek/mgr/3D_maps/train/')
+    base_path = Path('/home/czarek/mgr/data/train')
     images_names = [image_path.name
                     for image_path in sorted((base_path / 'images').iterdir())]
     dataset = MapsDataset(base_path, images_names, transforms=transform)
@@ -279,12 +282,12 @@ def test_training():
     # instantiate your data module
     data_module = MapsDataModule()
 
-    model = ThreeD_UNet_cooler()
+    model = UNet_cooler()
 
-    # neptune = pl.loggers.neptune.NeptuneLogger(
-    #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
-    #     project='czarkoman/mgr-sampling-cnn'
-    # )
+    neptune = pl.loggers.neptune.NeptuneLogger(
+        api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
+        project='czarkoman/mgr-sampling-cnn'
+    )
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename='{epoch}-{val_loss:.3f}',
@@ -297,9 +300,9 @@ def test_training():
     )
 
     trainer = pl.Trainer(
-                         # logger=neptune,
+                         logger=neptune,
                          accelerator='gpu',
-                         fast_dev_run=True,
+                         fast_dev_run=False,
                          log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
@@ -307,9 +310,9 @@ def test_training():
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
-    # neptune.run.stop()
+    neptune.run.stop()
 
-    # torch.save(model.state_dict(), MODEL_PATH)
+    torch.save(model.state_dict(), MODEL_PATH)
 
 
 if __name__ == '__main__':
