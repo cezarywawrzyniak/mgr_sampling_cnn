@@ -131,8 +131,8 @@ def generate_paths():
         start, finish = get_start_finish_coordinates(map_path)
         path = astar(occ_map, start, finish)
         if path:
-            save_and_visualize_path(occ_map=occ_map, path=path, directory=map_path, visualize=True, save=True)
-            print(path)
+            save_and_visualize_path(occ_map=occ_map, path=path, directory=map_path, visualize=False, save=True)
+            # print(path)
         else:
             print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", map_path)
             os.remove(map_path)
