@@ -25,22 +25,26 @@ def iterate_over_all_maps(blank_maps: list):
 def draw_start_and_finish(occ_map: np.array, path: str, number: int) -> str:
     dimensions = occ_map.shape
 
-    x_start, y_start, z_start = 0, 0, 0
-    while occ_map[y_start, x_start, z_start] == 255:
+    x_start = random.randint(0, dimensions[0] - 1)
+    y_start = random.randint(0, dimensions[1] - 1)
+    z_start = random.randint(0, dimensions[2] - 1)
+    while occ_map[x_start, y_start, z_start] == 255:
         x_start = random.randint(0, dimensions[0] - 1)
         y_start = random.randint(0, dimensions[1] - 1)
         z_start = random.randint(0, dimensions[2] - 1)
-        if occ_map[y_start, x_start, z_start] != 255:
+        if occ_map[x_start, y_start, z_start] != 255:
             break
 
-    x_finish, y_finish, z_finish = 0, 0, 0
+    x_finish = random.randint(0, dimensions[0] - 1)
+    y_finish = random.randint(0, dimensions[1] - 1)
+    z_finish = random.randint(0, dimensions[2] - 1)
     dst = 0.0
-    while occ_map[y_finish, x_finish, z_finish] == 255 or dst < 10.0:
+    while occ_map[x_finish, y_finish, z_finish] == 255 or dst < 10.0:
         x_finish = random.randint(0, dimensions[0] - 1)
         y_finish = random.randint(0, dimensions[1] - 1)
         z_finish = random.randint(0, dimensions[2] - 1)
         dst = distance.euclidean((x_start, y_start, z_start), (x_finish, y_finish, z_finish))
-        if occ_map[y_start, x_start, z_start] != 255 and dst >= 10.0:
+        if occ_map[x_finish, y_finish, z_finish] != 255 and dst >= 10.0:
             break
 
     new_path = add_to_string(path, 'sx', str(x_start))

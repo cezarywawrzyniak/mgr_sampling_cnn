@@ -8,19 +8,19 @@ def create_map(width: int, height: int, depth: int) -> np.array:
 
     # Fill with obstacles
     for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 15, 75, 15, 15, 15, 15)  # Long in x
+        occ_map = add_obstacle(occ_map, 10, 47, 10, 10, 10, 10)  # Long in x
 
     for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 15, 15, 15, 75, 15, 15)  # Long in y
+        occ_map = add_obstacle(occ_map, 10, 10, 10, 47, 10, 10)  # Long in y
 
     for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 15, 15, 15, 15, 15, 75)  # Long in z
+        occ_map = add_obstacle(occ_map, 10, 10, 10, 10, 10, 47)  # Long in z
 
     for _ in range(random.randint(1, 3)):
-        occ_map = add_obstacle(occ_map, 40, 40, 40, 40, 40, 40)  # Symmetrical big
+        occ_map = add_obstacle(occ_map, 25, 25, 25, 25, 25, 25)  # Symmetrical big
 
     for _ in range(random.randint(10, 20)):
-        occ_map = add_obstacle(occ_map, 15, 15, 15, 15, 15, 15)  # Symmetrical small
+        occ_map = add_obstacle(occ_map, 10, 10, 10, 10, 10, 10)  # Symmetrical small
 
     return occ_map
 
@@ -44,7 +44,7 @@ def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: i
 def generate_maps():
     for map_no in range(10):  # CHANGE NUMBER OF GENERATED MAPS
         save_path = f'/home/czarek/mgr/3D_maps/blanks/map_{map_no}_path_sx_sy_sz_fx_fy_fz.npy'
-        occ_map = create_map(128, 128, 128)  # Update dimensions for width, height, and depth
+        occ_map = create_map(80, 80, 80)  # Update dimensions for width, height, and depth
         np.save(save_path, occ_map)
 
 
