@@ -164,7 +164,6 @@ class ThreeD_UNet_cooler(pl.LightningModule):
     def forward(self, x, coords):
         # Reshape input so it is (batch_size, channels, depth, height, width) = (batch_size, 1, 80, 80, 80)
         x = x.unsqueeze(1)
-        # print(x.size())
 
         # Encoder
         x1 = self.conv1(x)
@@ -173,17 +172,28 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
+        print(x.size())  # torch.Size([2, 1, 80, 80, 80])
+        print(x1.size())  # torch.Size([2, 64, 80, 40, 40])
+        print(x2.size())  # torch.Size([2, 64, 80, 40, 40])
+        print(x3.size())  # torch.Size([2, 128, 40, 20, 20])
+        print(x4.size())  # torch.Size([2, 256, 20, 10, 10])
+        print(x5.size())  # torch.Size([2, 512, 10, 5, 5])
+
+        print(coords.size())  # torch.Size([2, 1, 2, 3])
         coords_64 = self.conv_coords_64(coords)
-        coords_x2 = F.interpolate(coords_64, size=x2.size()[2:], mode='bilinear', align_corners=True)
+        coords_x2 = F.interpolate(coords_64.unsqueeze(-1), size=x2.size()[2:], mode='trilinear', align_corners=True)
+        print(coords_64.size())
+        print(coords_x2.size())
+        print(x2.size())
         x2 = torch.cat((x2, coords_x2), dim=1)
         coords_128 = self.conv_coords_128(coords_64)
-        coords_x3 = F.interpolate(coords_128, size=x3.size()[2:], mode='bilinear', align_corners=True)
+        coords_x3 = F.interpolate(coords_128.unsqueeze(-1), size=x3.size()[2:], mode='trilinear', align_corners=True)
         x3 = torch.cat((x3, coords_x3), dim=1)
         coords_256 = self.conv_coords_256(coords_128)
-        coords_x4 = F.interpolate(coords_256, size=x4.size()[2:], mode='bilinear', align_corners=True)
+        coords_x4 = F.interpolate(coords_256.unsqueeze(-1), size=x4.size()[2:], mode='trilinear', align_corners=True)
         x4 = torch.cat((x4, coords_x4), dim=1)
         coords_512 = self.conv_coords_512(coords_256)
-        coords_x5 = F.interpolate(coords_512, size=x5.size()[2:], mode='bilinear', align_corners=True)
+        coords_x5 = F.interpolate(coords_512.unsqueeze(-1), size=x5.size()[2:], mode='trilinear', align_corners=True)
         x5 = torch.cat((x5, coords_x5), dim=1)
 
         # Decoder
