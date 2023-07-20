@@ -147,7 +147,7 @@ class UNet_cooler(pl.LightningModule):
         # Decoder
         self.upconv6 = nn.ConvTranspose2d(512+512, 256, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
-            nn.Conv2d(768, 512, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(768, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
