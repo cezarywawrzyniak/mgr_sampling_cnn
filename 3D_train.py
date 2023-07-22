@@ -67,8 +67,8 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/3D_maps/train/'), batch_size: int = 2, test_size=0.15,
-                 num_workers=1):
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/3D_data/train'), batch_size: int = 3, test_size=0.15,
+                 num_workers=16):
         super().__init__()
         self._main_path = main_path
         self._batch_size = batch_size
@@ -110,7 +110,12 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         self.loss = nn.BCEWithLogitsLoss()
 
         self.base_model = models.video.r3d_18(pretrained=True)
-        self.base_model.stem[0] = nn.Conv3d(1, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2), padding=(1, 3, 3))
+        self.base_model.stem[0] = nn.Sequential(
+            nn.Conv3d(1, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+        )
 
         # Encoder
         self.conv1 = self.base_model.stem
@@ -138,28 +143,28 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         )
 
         # Decoder
-        self.upconv6 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
+        self.upconv6 = nn.ConvTranspose3d(1024, 512, kernel_size=2, stride=2)
         self.conv6 = nn.Sequential(
-            nn.Conv2d(1024, 512, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(1024, 512, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(512, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.upconv7 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.upconv7 = nn.ConvTranspose3d(256, 128, kernel_size=2, stride=2)
         self.conv7 = nn.Sequential(
-            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(384, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(256, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.upconv8 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.upconv8 = nn.ConvTranspose3d(128, 64, kernel_size=2, stride=2)
         self.conv8 = nn.Sequential(
-            nn.Conv2d(192, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(192, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv3d(128, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
-        self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
+        self.final_conv = nn.Conv3d(64, 1, kernel_size=1)
 
     def forward(self, x, coords):
         # Reshape input so it is (batch_size, channels, depth, height, width) = (batch_size, 1, 80, 80, 80)
@@ -172,19 +177,9 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
-        print(x.size())  # torch.Size([2, 1, 80, 80, 80])
-        print(x1.size())  # torch.Size([2, 64, 80, 40, 40])
-        print(x2.size())  # torch.Size([2, 64, 80, 40, 40])
-        print(x3.size())  # torch.Size([2, 128, 40, 20, 20])
-        print(x4.size())  # torch.Size([2, 256, 20, 10, 10])
-        print(x5.size())  # torch.Size([2, 512, 10, 5, 5])
-
         print(coords.size())  # torch.Size([2, 1, 2, 3])
         coords_64 = self.conv_coords_64(coords)
         coords_x2 = F.interpolate(coords_64.unsqueeze(-1), size=x2.size()[2:], mode='trilinear', align_corners=True)
-        print(coords_64.size())
-        print(coords_x2.size())
-        print(x2.size())
         x2 = torch.cat((x2, coords_x2), dim=1)
         coords_128 = self.conv_coords_128(coords_64)
         coords_x3 = F.interpolate(coords_128.unsqueeze(-1), size=x3.size()[2:], mode='trilinear', align_corners=True)
@@ -249,7 +244,7 @@ def test_dataset():
     ])
 
     # create dataset instance
-    base_path = Path('/home/czarek/mgr/3D_maps/train/')
+    base_path = Path('/home/czarek/mgr/3D_data/train')
     images_names = [image_path.name
                     for image_path in sorted((base_path / 'images').iterdir())]
     dataset = MapsDataset(base_path, images_names, transforms=transform)
@@ -291,10 +286,10 @@ def test_training():
 
     model = ThreeD_UNet_cooler()
 
-    # neptune = pl.loggers.neptune.NeptuneLogger(
-    #     api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
-    #     project='czarkoman/mgr-sampling-cnn'
-    # )
+    neptune = pl.loggers.neptune.NeptuneLogger(
+        api_key='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIyZDE5YmQyMy0xNzRmLTRlMTQtYTU3Yy0wMmVmOGQ5MmVjZjEifQ==',
+        project='czarkoman/mgr-sampling-cnn'
+    )
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename='{epoch}-{val_loss:.3f}',
@@ -317,9 +312,9 @@ def test_training():
     trainer.fit(model, datamodule=data_module)
 
     trainer.test(model, datamodule=data_module, ckpt_path='best')
-    # neptune.run.stop()
+    neptune.run.stop()
 
-    # torch.save(model.state_dict(), MODEL_PATH)
+    torch.save(model.state_dict(), MODEL_PATH)
 
 
 if __name__ == '__main__':
