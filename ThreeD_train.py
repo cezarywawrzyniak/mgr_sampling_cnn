@@ -67,7 +67,7 @@ class MapsDataset(Dataset):
 
 
 class MapsDataModule(pl.LightningDataModule):
-    def __init__(self, main_path: Path = Path('/home/czarek/mgr/3D_data/train'), batch_size: int = 3, test_size=0.15,
+    def __init__(self, main_path: Path = Path('/home/czarek/mgr/3D_data/train'), batch_size: int = 1, test_size=0.15,
                  num_workers=16):
         super().__init__()
         self._main_path = main_path
@@ -302,9 +302,9 @@ def test_training():
     )
 
     trainer = pl.Trainer(
-                         # logger=neptune,
+                         logger=neptune,
                          accelerator='gpu',
-                         fast_dev_run=True,
+                         fast_dev_run=False,
                          log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
