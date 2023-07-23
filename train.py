@@ -116,9 +116,9 @@ class UNet_cooler(pl.LightningModule):
 
         # Encoder
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
         )
         self.conv2 = self.base_model.layer1
@@ -302,7 +302,7 @@ def test_training():
     trainer = pl.Trainer(
                          logger=neptune,
                          accelerator='gpu',
-                         fast_dev_run=False,
+                         fast_dev_run=True,
                          log_every_n_steps=3,
                          devices=1,
                          callbacks=[checkpoint_callback, early_stopping_callback],
