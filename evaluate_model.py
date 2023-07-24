@@ -1,7 +1,7 @@
 import torch
 
 from pathlib import Path
-from train import UNet_cooler, MapsDataModule
+from train_0 import UNet_cooler, MapsDataModule
 import matplotlib.pyplot as plt
 import numpy as np
 from torch import nn

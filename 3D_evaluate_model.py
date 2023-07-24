@@ -53,50 +53,53 @@ visualized_image = visualized_image.transpose((1, 2, 0))
 image_indices = np.nonzero(visualized_image)
 
 visualized_mask = np.array(mask[0, 0].detach().cpu().numpy())
-visualized_mask = visualized_mask.transpose((1, 2, 0))
+visualized_mask = ((visualized_mask - visualized_mask.min()) / (visualized_mask.max() - visualized_mask.min())) * 255
+# visualized_mask = visualized_mask.transpose((1, 2, 0))
 mask_indices = np.nonzero(visualized_mask)
-colors_mask = visualized_image[mask_indices]
+colors_mask = visualized_mask[mask_indices]
 
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
-
-ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='r', marker='o')
+ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
 ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
-
-# Set plot limits based on the image dimensions
 ax.set_xlim(0, visualized_mask.shape[0])
 ax.set_ylim(0, visualized_mask.shape[1])
 ax.set_zlim(0, visualized_mask.shape[2])
-
 plt.show()
 
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
-# Set plot limits based on the image dimensions
 ax.set_xlim(0, visualized_mask.shape[0])
 ax.set_ylim(0, visualized_mask.shape[1])
 ax.set_zlim(0, visualized_mask.shape[2])
 plt.show()
 
 visualized_output = np.array(output[0, 0].detach().cpu().numpy())
-visualized_output = visualized_output.transpose((1, 2, 0))
-threshold_output = -3.0
-visualized_output = (visualized_output > threshold_output).astype(np.uint8)
+visualized_output = ((visualized_output - visualized_output.min()) / (visualized_output.max() - visualized_output.min())) * 255
+threshold_output = 250
+visualized_output_binary = (visualized_output > threshold_output)
+visualized_output_masked = visualized_output.copy()
+visualized_output_masked[~visualized_output_binary] = 0
 
-output_indices = np.nonzero(visualized_output)
-colors = visualized_output[output_indices]
+output_indices = np.nonzero(visualized_output_masked)
+colors = visualized_output_masked[output_indices]
 
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
-
-ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='r', marker='o')
+ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
 ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
+ax.set_xlim(0, visualized_output_masked.shape[0])
+ax.set_ylim(0, visualized_output_masked.shape[1])
+ax.set_zlim(0, visualized_output_masked.shape[2])
+plt.show()
 
-# Set plot limits based on the image dimensions
-ax.set_xlim(0, visualized_output.shape[0])
-ax.set_ylim(0, visualized_output.shape[1])
-ax.set_zlim(0, visualized_output.shape[2])
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
+ax.set_xlim(0, visualized_output_masked.shape[0])
+ax.set_ylim(0, visualized_output_masked.shape[1])
+ax.set_zlim(0, visualized_output_masked.shape[2])
 
 plt.show()
 

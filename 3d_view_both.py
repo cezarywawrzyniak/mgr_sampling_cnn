@@ -25,7 +25,7 @@ if len(sys.argv) != 2:
 # Get the filename from command-line argument
 # file_name = sys.argv[1]
 file_name = get_random_file('/home/czarek/mgr/3D_eval_data/images/')
-# file_name = 'map_4_path2_sx6_sy27_sz32_fx46_fy65_fz34'
+# file_name = 'map_2_path7_sx79_sy26_sz10_fx61_fy48_fz35'
 print(file_name)
 
 occ_path = f'/home/czarek/mgr/3D_eval_data/images/{file_name}.npy'
