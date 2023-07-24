@@ -41,6 +41,7 @@ class MapsDataset(Dataset):
         # print("IMAGE:")
         # print(f'{self._main_path}/images/{img_name}')
         image = np.load(f'{self._main_path}/images/{img_name}')
+        print(img_name)
         image = (image - image.min()) / (image.max() - image.min())
 
         # print("MASK:")

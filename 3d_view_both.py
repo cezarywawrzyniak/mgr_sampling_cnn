@@ -10,8 +10,8 @@ if len(sys.argv) != 2:
 # Get the filename from command-line argument
 file_name = sys.argv[1]
 
-occ_path = f'/home/czarek/mgr/3D_maps/one_example/start_finish/{file_name}.npy'
-path_path = f'/home/czarek/mgr/3D_maps/one_example/paths/{file_name}.npy'
+occ_path = f'/home/czarek/mgr/3D_eval_data/images/{file_name}.npy'
+path_path = f'/home/czarek/mgr/3D_eval_data/masks/{file_name}.npy'
 
 # Load the occupancy map and path
 occ_map = np.load(occ_path)
