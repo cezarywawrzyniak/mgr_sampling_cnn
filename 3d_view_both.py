@@ -2,13 +2,31 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import random
+
+
+def get_random_file(directory_path):
+    if not os.path.exists(directory_path) or not os.path.isdir(directory_path):
+        raise ValueError("Invalid directory path provided.")
+
+    files = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
+    if not files:
+        return None  # The directory is empty
+
+    random_file = random.choice(files)
+    file_name_without_extension = os.path.splitext(random_file)[0]
+    return file_name_without_extension
+
 
 if len(sys.argv) != 2:
     print("Usage: python script.py file_name")
     sys.exit(1)
 
 # Get the filename from command-line argument
-file_name = sys.argv[1]
+# file_name = sys.argv[1]
+file_name = get_random_file('/home/czarek/mgr/3D_eval_data/images/')
+# file_name = 'map_4_path2_sx6_sy27_sz32_fx46_fy65_fz34'
+print(file_name)
 
 occ_path = f'/home/czarek/mgr/3D_eval_data/images/{file_name}.npy'
 path_path = f'/home/czarek/mgr/3D_eval_data/masks/{file_name}.npy'
