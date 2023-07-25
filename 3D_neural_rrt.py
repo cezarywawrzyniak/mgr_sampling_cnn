@@ -7,10 +7,10 @@ from scipy.spatial import distance
 from pathlib import Path
 from time import perf_counter
 
-from train_0 import UNet_cooler, MapsDataModule
+from ThreeD_train import ThreeD_UNet_cooler, MapsDataModule
 
-BASE_PATH = Path('/home/czarek/mgr/eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol2.pth"
+BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
+MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 5.0
 
@@ -22,11 +22,13 @@ def get_blank_maps_list() -> list:
 
 def get_start_finish_coordinates(path: str) -> tuple:
     x_start = int(get_from_string(path, "_sx", "_sy"))
-    y_start = int(get_from_string(path, "_sy", "_fx"))
+    y_start = int(get_from_string(path, "_sy", "_sz"))
+    z_start = int(get_from_string(path, "_sz", "_fx"))
     x_finish = int(get_from_string(path, "_fx", "_fy"))
-    y_finish = int(get_from_string(path, "_fy", ".png"))
+    y_finish = int(get_from_string(path, "_fy", "_fz"))
+    z_finish = int(get_from_string(path, "_fz", ".npy"))
 
-    return (y_start, x_start), (y_finish, x_finish)
+    return (x_start, y_start, z_start), (x_finish, y_finish, z_finish)
 
 
 def get_from_string(path: str, start: str, finish: str) -> str:
@@ -39,7 +41,7 @@ def get_from_string(path: str, start: str, finish: str) -> str:
 
 
 class Node:
-    def __init__(self, position: tuple[int, int], cost: float = 0.0):
+    def __init__(self, position: tuple[int, int, int], cost: float = 0.0):
         self.position = position
         self.parent = None
         self.children = []
@@ -47,7 +49,7 @@ class Node:
 
 
 class RRTStar:
-    def __init__(self, occ_map: np.array, heat_map: np.array, start: tuple[int, int], goal: tuple[int, int],
+    def __init__(self, occ_map: np.array, heat_map: np.array, start: tuple[int, int, int], goal: tuple[int, int, int],
                  max_iterations: int, goal_threshold: float, neural_bias: float):
         self.start_node = Node(start)
         self.goal = goal
@@ -56,49 +58,52 @@ class RRTStar:
         self.search_radius = None
         self.goal_threshold = goal_threshold
         self.nodes = [self.start_node]
-        self.occ_map = np.dot(occ_map[..., :3], [0.2989, 0.5870, 0.1140])
-        self.map_height, self.map_width = self.occ_map.shape
+        self.occ_map = occ_map  # TODO
+        self.map_height, self.map_width, self.map_depth = occ_map.shape
         self.best_distance = float('inf')
         self.best_node = None
         self.neural_bias = neural_bias
-        self.heat_map = heat_map[0] + 10
+        self.heat_map = heat_map - 250
 
-    def generate_random_sample(self) -> tuple[int, int]:
+    def generate_random_sample(self) -> tuple[int, int, int]:
         while True:
             x = random.randint(0, self.map_width - 1)
             y = random.randint(0, self.map_height - 1)
-            if self.occ_map[y, x] != 0:
-                return y, x
+            z = random.randint(0, self.map_depth - 1)
+            if self.occ_map[x, y, z] != 255:
+                return x, y, z
 
-    def generate_neural_sample(self) -> tuple[int, int]:
-        # Flatten the heatmap to a 1D array
-        flat_heatmap = self.heat_map.flatten()
+    def generate_neural_sample(self) -> tuple[int, int, int]:
+        while True:
+            # Flatten the heatmap to a 1D array
+            flat_heatmap = self.heat_map.flatten()
 
-        # Add a constant to shift the values to be non-negative
-        # shifted_heatmap = flat_heatmap - np.min(flat_heatmap) + 1e-6
-        shifted_heatmap = flat_heatmap - np.min(flat_heatmap)
+            # Add a constant to shift the values to be non-negative
+            # shifted_heatmap = flat_heatmap - np.min(flat_heatmap) + 1e-6
+            shifted_heatmap = flat_heatmap - np.min(flat_heatmap)
 
-        # Calculate the weights by taking the exponential of the shifted heatmap
-        # weights = np.exp(shifted_heatmap)
-        weights = shifted_heatmap
+            # Calculate the weights by taking the exponential of the shifted heatmap
+            # weights = np.exp(shifted_heatmap)
+            weights = shifted_heatmap
 
-        # Normalize the weights to sum up to 1
-        normalized_weights = weights / np.sum(weights)
+            # Normalize the weights to sum up to 1
+            normalized_weights = weights / np.sum(weights)
 
-        # Generate a random value between 0 and 1
-        random_value = random.uniform(0, 1)
+            # Generate a random value between 0 and 1
+            random_value = random.uniform(0, 1)
 
-        # Calculate the cumulative weights
-        cumulative_weights = np.cumsum(normalized_weights)
+            # Calculate the cumulative weights
+            cumulative_weights = np.cumsum(normalized_weights)
 
-        # Find the index where the random value falls in the cumulative weights
-        index = np.searchsorted(cumulative_weights, random_value)
+            # Find the index where the random value falls in the cumulative weights
+            index = np.searchsorted(cumulative_weights, random_value)
 
-        # Convert the index back to 2D coordinates
-        height, width, _ = self.heat_map.shape
-        heat_map_shape = height, width
-        y, x = np.unravel_index(index-1, heat_map_shape)
-        return y, x
+            # Convert the index back to 2D coordinates
+            height, width, depth = self.heat_map.shape
+            heat_map_shape = height, width, depth
+            x, y, z = np.unravel_index(index-1, heat_map_shape)  # TODO
+            if self.occ_map[x, y, z] != 255:
+                return x, y, z  # TODO
 
     def find_nearest_neighbor(self, sample) -> Node:
         nearest_node = None
@@ -112,20 +117,23 @@ class RRTStar:
 
         return nearest_node
 
-    def steer(self, from_node: Node, to_point: tuple[int, int]) -> Node:
+    def steer(self, from_node: Node, to_point: tuple[int, int, int]) -> Node:
         # vector to new node
-        direction = (to_point[0] - from_node.position[0], to_point[1] - from_node.position[1])
-        dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
+        direction = (to_point[0] - from_node.position[0], to_point[1] - from_node.position[1],
+                     to_point[2] - from_node.position[2])
+        dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2)
 
         # scaling down the vector if it exceeds max_step_size
         if dist > self.search_radius:
-            direction = (direction[0] * self.search_radius / dist, direction[1] * self.search_radius / dist)
+            direction = (direction[0] * self.search_radius / dist, direction[1] * self.search_radius / dist,
+                         direction[2] * self.search_radius / dist)
 
         # recalculate the distance
-        dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
+        dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2)
         new_cost = from_node.cost + dist  # Calculate the new cost
 
-        new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1]), new_cost)
+        new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1],
+                         from_node.position[2] + direction[2]), new_cost)
         new_node.parent = from_node
 
         return new_node
@@ -138,7 +146,7 @@ class RRTStar:
         else:
             return False
 
-    def is_collision_free(self, point1: tuple[int, int], point2: tuple[int, int]) -> bool:
+    def is_collision_free(self, point1: tuple[int, int, int], point2: tuple[int, int, int]) -> bool:
         # get distance between points and 100 point between them within that distance
         dist = np.linalg.norm(np.array(point1) - np.array(point2))
         to_check = np.linspace(0, dist, num=100)
@@ -148,9 +156,10 @@ class RRTStar:
 
         # check every calculated point between point1 and point2 for obstacle
         for dis_int in to_check:
-            y = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
-            x = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
-            if self.occ_map[y, x] == 0:
+            x = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
+            y = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
+            z = int(point1[2] - ((dis_int * (point1[2] - point2[2])) / dist))
+            if self.occ_map[x, y, z] == 255:
                 return False
 
         return True
@@ -186,14 +195,14 @@ class RRTStar:
                 nearby_nodes.append(other_node)
         return nearby_nodes
 
-    def goal_reached(self, node: Node, goal: tuple[int, int]) -> bool:
+    def goal_reached(self, node: Node, goal: tuple[int, int, int]) -> bool:
         dist = distance.euclidean(node.position, goal)
         if dist < self.best_distance:
             self.best_distance = dist
             self.best_node = node
         return dist <= self.goal_threshold
 
-    def find_path(self, goal: tuple[int, int]) -> list[tuple[int, int]]:
+    def find_path(self, goal: tuple[int, int, int]) -> list[tuple[int, int, int]]:
         path = []
         current_node = goal
 
@@ -205,24 +214,24 @@ class RRTStar:
         return path
 
     def lebesgue_measure(self, dim: int) -> float:
-        return math.pow(math.pi, dim/2.0) / math.gamma((dim/2.0) + 1)
+        return math.pow(math.pi, dim / 2.0) / math.gamma((dim / 2.0) + 1)
 
     def search_space_volume(self) -> float:
-        return self.map_width * self.map_height
+        return self.map_width * self.map_height * self.map_width
 
     def compute_search_radius(self, dim: int) -> float:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int]]:
+    def rrt_star(self) -> list[tuple[int, int, int]]:
         goal_node = None
 
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
-            self.search_radius = self.compute_search_radius(dim=2)
-            print("ITERATION:", self.iteration_no)
-            print("BEST DISTANCE:", self.best_distance)
-            print("SEARCH RADIUS:", self.search_radius)
+            self.search_radius = self.compute_search_radius(dim=3)
+            # print("ITERATION:", self.iteration_no)
+            # print("BEST DISTANCE:", self.best_distance)
+            # print("SEARCH RADIUS:", self.search_radius)
 
             if random.random() < self.neural_bias:
                 random_sample = self.generate_neural_sample()
@@ -250,76 +259,44 @@ class RRTStar:
         path = self.find_path(goal_node)
         return path
 
-    def visualize_tree(self, mask: np.array):
-        fig, ax = plt.subplots(1, 3)
-        ax[0].set_aspect('equal')
+    def visualize_path(self, path: list[tuple[int, int, int]]):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
 
-        # Plot obstacles or occupancy map if available
-        if self.occ_map is not None:
-            ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
-
-        # Plot nodes and connections
-        for node in self.nodes:
-            for child in node.children:
-                y_values = [node.position[0], child.position[0]]
-                x_values = [node.position[1], child.position[1]]
-                ax[0].plot(x_values, y_values, 'b-')
-
-        # Set start and goal markers if available
-        if self.start_node.position is not None:
-            ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
-        if self.goal is not None:
-            ax[0].plot(self.goal[1], self.goal[0], 'ro', markersize=8, label='Goal')
-
-        ax[0].legend()
-        ax[1].imshow(self.heat_map)
-        ax[1].invert_yaxis()
-        ax[2].imshow(mask)
-        ax[2].invert_yaxis()
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('RRT* Tree Visualization')
-        plt.show()
-
-    def visualize_path(self, path: list[tuple[int, int]], mask: np.array):
-        fig, ax = plt.subplots(1, 3)
-        ax[0].set_aspect('equal')
-
-        # Plot obstacles or occupancy map if available
-        if self.occ_map is not None:
-            ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
+        # Plot occupancy map
+        x_occ, y_occ, z_occ = np.where(self.occ_map == 1.0)
+        ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
 
         # Plot path
-        y_values = [position[0] for position in path]
-        x_values = [position[1] for position in path]
-        ax[0].plot(x_values, y_values, 'r-', linewidth=2, label='Path')
+        z_values = [position[2] for position in path]
+        y_values = [position[1] for position in path]
+        x_values = [position[0] for position in path]
+        ax.plot3D(x_values, y_values, z_values, 'r-', linewidth=2, label='Path')
 
         # Plot nodes and connections
         for node in self.nodes:
             for child in node.children:
-                y_values = [node.position[0], child.position[0]]
-                x_values = [node.position[1], child.position[1]]
-                ax[0].plot(x_values, y_values, 'b-', alpha=0.2)
+                z_values = [node.position[2], child.position[2]]
+                y_values = [node.position[1], child.position[1]]
+                x_values = [node.position[0], child.position[0]]
+                ax.plot3D(x_values, y_values, z_values, 'b-', alpha=0.2)
 
         # Set start and goal markers if available
         if self.start_node.position is not None:
-            ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
+            ax.scatter(self.start_node.position[0], self.start_node.position[1], self.start_node.position[2], c='g', marker='o', s=100, label='Start')
         if self.goal is not None:
-            ax[0].plot(self.goal[1], self.goal[0], 'ro', markersize=8, label='Goal')
+            ax.scatter(self.goal[0], self.goal[1], self.goal[2], c='r', marker='o', s=100, label='Goal')
 
-        ax[0].legend()
-        ax[1].imshow(self.heat_map)
-        ax[1].invert_yaxis()
-        ax[2].imshow(mask)
-        ax[2].invert_yaxis()
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('RRT* Path Visualization')
+        ax.legend()
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.set_title('RRT* Path Visualization in 3D')
         plt.show()
 
 
 def generate_paths():
-    model = UNet_cooler()
+    model = ThreeD_UNet_cooler()
     model.load_state_dict(torch.load(MODEL_PATH))
 
     model.eval()
@@ -340,54 +317,77 @@ def generate_paths():
     batch = next(iter(dataloader))
     image, mask, coords = batch
 
-    occ_map = image.data.detach().cpu().numpy()
-    occ_map = occ_map.transpose((0, 2, 3, 1))
-    occ_map = occ_map[0]
-
-    ideal_mask = mask.data.detach().cpu().numpy()
-    ideal_mask = ideal_mask.transpose((0, 2, 3, 1))
-    ideal_mask = ideal_mask[0]
-
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
-        clipped = torch.clamp(output, min=-10, max=1)
-
-    clipped = clipped.detach().cpu().numpy()
-    clipped = clipped.transpose((0, 2, 3, 1))
 
     x_start = coords.data.tolist()[0][0][0][0]
     y_start = coords.data.tolist()[0][0][0][1]
+    z_start = coords.data.tolist()[0][0][0][2]
     x_finish = coords.data.tolist()[0][0][1][0]
     y_finish = coords.data.tolist()[0][0][1][1]
-    start = (y_start, x_start)
-    finish = (y_finish, x_finish)
+    z_finish = coords.data.tolist()[0][0][1][2]
+    start = (x_start, y_start, z_start)
+    finish = (x_finish, y_finish, z_finish)
 
-    rrt_neural = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
+    occ_map = np.array(image[0].detach().cpu().numpy())
+    print("OCCMAP")
+    print(occ_map.shape)
+    # occ_map = occ_map.transpose((2, 1, 0))
+
+    output = np.array(output[0, 0].detach().cpu().numpy())
+    # output = output.transpose((2, 1, 0))
+    print("OUTPUT")
+    print(output.shape)
+    output = ((output - output.min()) / (output.max() - output.min())) * 255
+    threshold_output = 250
+    output_binary = (output > threshold_output)
+    output_masked = output.copy()
+    output_masked[~output_binary] = 0
+    print("OUTPUTMASKED")
+    print(output_masked.shape)
+    print("START:", start)
+    print("FINISH:", finish)
+
+    rrt_neural = RRTStar(occ_map=occ_map, heat_map=output_masked, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                          goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
+
     path = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
 
     if path:
-        rrt_neural.visualize_tree(ideal_mask)
-        rrt_neural.visualize_path(path, ideal_mask)
-    else:
-        print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
-
-    timer_rrt_start = perf_counter()
-    rrt = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
-                  goal_threshold=GOAL_THRESHOLD, neural_bias=0.0)
-    path = rrt.rrt_star()
-    timer_rrt_stop = perf_counter()
-
-    if path:
-        rrt.visualize_tree(ideal_mask)
-        rrt.visualize_path(path, ideal_mask)
+        print(path)
+        rrt_neural.visualize_path(path)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
 
     print(f'Calculation time of neural RRT*: {timer_neural_stop - timer_neural_start}')
-    print(f'Calculation time of RRT*: {timer_rrt_stop - timer_rrt_start}')
+
+    visualized_mask = np.array(mask[0, 0].detach().cpu().numpy())
+    # visualized_mask = visualized_mask.transpose((2, 1, 0))
+    visualized_mask = ((visualized_mask - visualized_mask.min()) / (
+                visualized_mask.max() - visualized_mask.min())) * 255
+
+    image_indices = np.nonzero(occ_map)
+    mask_indices = np.nonzero(visualized_mask)
+    colors_mask = visualized_mask[mask_indices]
+    output_indices = np.nonzero(output_masked)
+    colors_output = output_masked[output_indices]
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
+    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
+    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors_output, cmap='jet', marker='o')
+    ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
+    ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
+    ax.set_xlim(0, visualized_mask.shape[0])
+    ax.set_ylim(0, visualized_mask.shape[1])
+    ax.set_zlim(0, visualized_mask.shape[2])
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
 
 
 if __name__ == '__main__':

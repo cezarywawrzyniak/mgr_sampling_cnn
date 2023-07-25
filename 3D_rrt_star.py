@@ -25,7 +25,7 @@ def get_start_finish_coordinates(path: str) -> tuple:
     y_finish = int(get_from_string(path, "_fy", "_fz"))
     z_finish = int(get_from_string(path, "_fz", ".npy"))
 
-    return (z_start, y_start, x_start), (z_finish, y_finish, x_finish)
+    return (x_start, y_start, z_start), (x_finish, y_finish, z_finish)
 
 
 def get_from_string(path: str, start: str, finish: str) -> str:
@@ -269,7 +269,6 @@ def generate_paths():
         finished = True
         if path:
             print(path)
-            # rrt.visualize_tree()
             rrt.visualize_path(path)
         else:
             print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", map_path)

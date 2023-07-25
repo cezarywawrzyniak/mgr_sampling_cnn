@@ -177,7 +177,6 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         x4 = self.conv4(x3)
         x5 = self.conv5(x4)
 
-        print(coords.size())  # torch.Size([2, 1, 2, 3])
         coords_64 = self.conv_coords_64(coords)
         coords_x2 = F.interpolate(coords_64.unsqueeze(-1), size=x2.size()[2:], mode='trilinear', align_corners=True)
         x2 = torch.cat((x2, coords_x2), dim=1)
