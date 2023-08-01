@@ -220,9 +220,9 @@ class RRTStar:
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=2)
-            print("ITERATION:", self.iteration_no)
-            print("BEST DISTANCE:", self.best_distance)
-            print("SEARCH RADIUS:", self.search_radius)
+            # print("ITERATION:", self.iteration_no)
+            # print("BEST DISTANCE:", self.best_distance)
+            # print("SEARCH RADIUS:", self.search_radius)
 
             if random.random() < self.neural_bias:
                 random_sample = self.generate_neural_sample()
