@@ -39,12 +39,12 @@ def draw_start_and_finish(occ_map: np.array, path: str, number: int) -> str:
     y_finish = random.randint(0, dimensions[1] - 1)
     z_finish = random.randint(0, dimensions[2] - 1)
     dst = 0.0
-    while occ_map[x_finish, y_finish, z_finish] == 255 or dst < 10.0:
+    while occ_map[x_finish, y_finish, z_finish] == 255 or dst < 20.0:
         x_finish = random.randint(0, dimensions[0] - 1)
         y_finish = random.randint(0, dimensions[1] - 1)
         z_finish = random.randint(0, dimensions[2] - 1)
         dst = distance.euclidean((x_start, y_start, z_start), (x_finish, y_finish, z_finish))
-        if occ_map[x_finish, y_finish, z_finish] != 255 and dst >= 10.0:
+        if occ_map[x_finish, y_finish, z_finish] != 255 and dst >= 20.0:
             break
 
     new_path = add_to_string(path, 'sx', str(x_start))

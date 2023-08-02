@@ -46,12 +46,12 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 indices = np.nonzero(occ_map)
 # Plot the occupied places as semi-transparent cuboids
-# ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
+ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
 
-ax.scatter(indices[0], indices[1], indices[2], c='k', marker='o')
-ax.set_xlim(0, occ_map.shape[0])
-ax.set_ylim(0, occ_map.shape[1])
-ax.set_zlim(0, occ_map.shape[2])
+# ax.scatter(indices[0], indices[1], indices[2], c='k', marker='o')
+ax.set_xlim(0, occ_map.shape[0]/4)
+ax.set_ylim(0, occ_map.shape[1]/4)
+ax.set_zlim(0, occ_map.shape[2]/4)
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')

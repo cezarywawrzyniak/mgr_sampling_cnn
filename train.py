@@ -39,7 +39,7 @@ class MapsDataset(Dataset):
         img_name = self._img_names[index]
 
         read_image = Image.open(self._main_path / 'images' / img_name)
-        read_image = read_image.convert('RGB')
+        # read_image = read_image.convert('RGB')
         image = np.asarray(read_image)
         image = (image - image.min()) / (image.max() - image.min())
         # print("IMAGE:")
@@ -116,7 +116,7 @@ class UNet_cooler(pl.LightningModule):
 
         # Encoder
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
