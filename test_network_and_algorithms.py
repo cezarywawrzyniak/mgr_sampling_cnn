@@ -63,9 +63,9 @@ def astar_pathfinding(occ_map, start, finish):
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("A*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
+    # print("A*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
 
     # visualize_astar_path(occ_map_gray, path, start, finish)
     return calculate_time, path_length
@@ -97,9 +97,9 @@ def rrt_star_pathfinding(occ_map, start, finish):
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("RRT*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
+    # print("RRT*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
 
     # rrt.visualize_path(path)
     return calculate_time, path_length
@@ -120,9 +120,9 @@ def neural_rrt_star_pathfinding(model, image, mask, coords, occ_map, start, fini
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("NeuralRRT*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
+    # print("NeuralRRT*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
 
     # ideal_mask = mask.data.detach().cpu().numpy()
     # ideal_mask = ideal_mask.transpose((0, 2, 3, 1))
@@ -154,6 +154,7 @@ def main():
         new_row = [astar_time, astar_length, rrt_star_time, rrt_star_length,
                    neural_rrt_star_time, neural_rrt_star_length]
         df.loc[len(df)] = new_row
+        print("ROW NO:", i)
         if i >= 1000:
             break
 
