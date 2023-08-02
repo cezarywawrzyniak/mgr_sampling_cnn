@@ -7,20 +7,20 @@ def create_map(width: int, height: int, depth: int) -> np.array:
     occ_map = np.zeros((height, width, depth), dtype=float)
 
     # Fill with obstacles, for map size 128: 15 40 75
-    for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 10, 47, 10, 10, 10, 10)  # Long in x
-
-    for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 10, 10, 10, 47, 10, 10)  # Long in y
-
-    for _ in range(random.randint(1, 2)):
-        occ_map = add_obstacle(occ_map, 10, 10, 10, 10, 10, 47)  # Long in z
+    for _ in range(random.randint(1, 3)):
+        occ_map = add_obstacle(occ_map, 20, 55, 10, 20, 10, 20)  # Long in x
 
     for _ in range(random.randint(1, 3)):
-        occ_map = add_obstacle(occ_map, 25, 25, 25, 25, 25, 25)  # Symmetrical big
+        occ_map = add_obstacle(occ_map, 10, 20, 20, 55, 10, 20)  # Long in y
 
-    for _ in range(random.randint(10, 20)):
-        occ_map = add_obstacle(occ_map, 10, 10, 10, 10, 10, 10)  # Symmetrical small
+    for _ in range(random.randint(1, 3)):
+        occ_map = add_obstacle(occ_map, 10, 20, 10, 20, 20, 55)  # Long in z
+
+    for _ in range(random.randint(1, 3)):
+        occ_map = add_obstacle(occ_map, 20, 30, 20, 30, 20, 30)  # Symmetrical big
+
+    for _ in range(random.randint(5, 15)):
+        occ_map = add_obstacle(occ_map, 10, 20, 10, 20, 10, 20)  # Symmetrical small
 
     return occ_map
 
