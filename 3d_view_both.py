@@ -24,12 +24,12 @@ if len(sys.argv) != 2:
 
 # Get the filename from command-line argument
 # file_name = sys.argv[1]
-file_name = get_random_file('/home/czarek/mgr/3D_eval_data/images/')
+file_name = get_random_file('/home/czarek/mgr/3D_data/train/images/')
 # file_name = 'map_2_path7_sx79_sy26_sz10_fx61_fy48_fz35'
 print(file_name)
 
-occ_path = f'/home/czarek/mgr/3D_eval_data/images/{file_name}.npy'
-path_path = f'/home/czarek/mgr/3D_eval_data/masks/{file_name}.npy'
+occ_path = f'/home/czarek/mgr/3D_data/train/images/{file_name}.npy'
+path_path = f'/home/czarek/mgr/3D_data/train/masks/{file_name}.npy'
 
 # Load the occupancy map and path
 occ_map = np.load(occ_path)
@@ -54,4 +54,19 @@ ax.set_xlim(0, visualized_image.shape[0])
 ax.set_ylim(0, visualized_image.shape[1])
 ax.set_zlim(0, visualized_image.shape[2])
 
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
 plt.show()
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(path_indices[0], path_indices[1], path_indices[2], c=colors, cmap='jet', marker='o')
+ax.set_xlim(0, visualized_image.shape[0])
+ax.set_ylim(0, visualized_image.shape[1])
+ax.set_zlim(0, visualized_image.shape[2])
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.show()
+
