@@ -20,7 +20,7 @@ from segmentation_models_pytorch.losses import DiceLoss, SoftCrossEntropyLoss
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-MODEL_PATH = "3D_sampling_cnn.pth"
+MODEL_PATH = "3D_sampling_cnn_vol2.pth"
 # os.environ['TORCH_HOME'] = '/app/.cache'
 
 
@@ -296,7 +296,7 @@ def test_training():
     )
     early_stopping_callback = pl.callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=10,
+        patience=20,
         verbose=True
     )
 

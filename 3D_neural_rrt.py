@@ -70,8 +70,10 @@ class RRTStar:
             x = random.randint(0, self.map_width - 1)
             y = random.randint(0, self.map_height - 1)
             z = random.randint(0, self.map_depth - 1)
-            if self.occ_map[x, y, z] != 255:
+            if self.occ_map[x, y, z] == 0:
                 return x, y, z
+            else:
+                print(self.occ_map[x, y, z])
 
     def generate_neural_sample(self) -> tuple[int, int, int]:
         while True:
@@ -102,8 +104,10 @@ class RRTStar:
             height, width, depth = self.heat_map.shape
             heat_map_shape = height, width, depth
             x, y, z = np.unravel_index(index-1, heat_map_shape)  # TODO
-            if self.occ_map[x, y, z] != 255:
+            if self.occ_map[x, y, z] == 0:
                 return x, y, z  # TODO
+            # else:
+            #     print(self.occ_map[x, y, z])
 
     def find_nearest_neighbor(self, sample) -> Node:
         nearest_node = None
@@ -159,7 +163,7 @@ class RRTStar:
             x = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
             y = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
             z = int(point1[2] - ((dis_int * (point1[2] - point2[2])) / dist))
-            if self.occ_map[x, y, z] == 255:
+            if self.occ_map[x, y, z] != 0:
                 return False
 
         return True
@@ -265,7 +269,7 @@ class RRTStar:
 
         # Plot occupancy map
         x_occ, y_occ, z_occ = np.where(self.occ_map == 1.0)
-        ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
+        # ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
 
         # Plot path
         z_values = [position[2] for position in path]
@@ -316,44 +320,40 @@ def generate_paths():
 
     batch = next(iter(dataloader))
     image, mask, coords = batch
+    start = tuple(coords.data.tolist()[0][0][0])
+    finish = tuple(coords.data.tolist()[0][0][1])
+
+    occ_map = np.array(image[0].detach().cpu().numpy())
+    occ_map = occ_map.transpose((1, 2, 0))
+    occ_map_indices = np.nonzero(occ_map)
 
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
 
-    x_start = coords.data.tolist()[0][0][0][0]
-    y_start = coords.data.tolist()[0][0][0][1]
-    z_start = coords.data.tolist()[0][0][0][2]
-    x_finish = coords.data.tolist()[0][0][1][0]
-    y_finish = coords.data.tolist()[0][0][1][1]
-    z_finish = coords.data.tolist()[0][0][1][2]
-    start = (x_start, y_start, z_start)
-    finish = (x_finish, y_finish, z_finish)
-
-    occ_map = np.array(image[0].detach().cpu().numpy())
-    print("OCCMAP")
-    print(occ_map.shape)
-    # occ_map = occ_map.transpose((2, 1, 0))
-
-    output = np.array(output[0, 0].detach().cpu().numpy())
-    # output = output.transpose((2, 1, 0))
-    print("OUTPUT")
-    print(output.shape)
-    output = ((output - output.min()) / (output.max() - output.min())) * 255
+    visualized_output = np.array(output[0, 0].detach().cpu().numpy())
+    visualized_output = ((visualized_output - visualized_output.min()) / (
+                visualized_output.max() - visualized_output.min())) * 255
+    # visualized_output = visualized_output.transpose((1, 2, 0))
     threshold_output = 250
-    output_binary = (output > threshold_output)
-    output_masked = output.copy()
-    output_masked[~output_binary] = 0
-    print("OUTPUTMASKED")
-    print(output_masked.shape)
-    print("START:", start)
-    print("FINISH:", finish)
+    visualized_output_binary = (visualized_output > threshold_output)
+    visualized_output_masked = visualized_output.copy()
+    visualized_output_masked[~visualized_output_binary] = 0
 
-    rrt_neural = RRTStar(occ_map=occ_map, heat_map=output_masked, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
-                         goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
+    rrt_neural = RRTStar(occ_map=occ_map, heat_map=visualized_output_masked, start=start, goal=finish,
+                         max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.5)
 
     path = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
+
+    output_indices = np.nonzero(visualized_output_masked)
+    output_colors = visualized_output_masked[output_indices]
+
+    visualized_mask = np.array(mask[0, 0].detach().cpu().numpy())
+    visualized_mask = ((visualized_mask - visualized_mask.min()) / (
+                visualized_mask.max() - visualized_mask.min())) * 255
+    mask_indices = np.nonzero(visualized_mask)
+    mask_colors = visualized_mask[mask_indices]
 
     if path:
         print(path)
@@ -362,22 +362,13 @@ def generate_paths():
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
 
     print(f'Calculation time of neural RRT*: {timer_neural_stop - timer_neural_start}')
-
-    visualized_mask = np.array(mask[0, 0].detach().cpu().numpy())
-    # visualized_mask = visualized_mask.transpose((2, 1, 0))
-    visualized_mask = ((visualized_mask - visualized_mask.min()) / (
-                visualized_mask.max() - visualized_mask.min())) * 255
-
-    image_indices = np.nonzero(occ_map)
-    mask_indices = np.nonzero(visualized_mask)
-    colors_mask = visualized_mask[mask_indices]
-    output_indices = np.nonzero(output_masked)
-    colors_output = output_masked[output_indices]
+    print(f'Start X:{start[0]}, Y:{start[1]}, Z:{start[2]}')
+    print(f'Finish X:{finish[0]}, Y:{finish[1]}, Z:{finish[2]}')
 
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
-    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
+    ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
+    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
     # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors_output, cmap='jet', marker='o')
     ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
     ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
