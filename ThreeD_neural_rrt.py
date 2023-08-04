@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 import torch
 import random
 import math
@@ -12,7 +14,7 @@ from ThreeD_train import ThreeD_UNet_cooler, MapsDataModule
 BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
 MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2.pth"
 MAX_ITERATIONS = 5000
-GOAL_THRESHOLD = 5.0
+GOAL_THRESHOLD = 3.0
 
 
 def get_blank_maps_list() -> list:
@@ -72,8 +74,8 @@ class RRTStar:
             z = random.randint(0, self.map_depth - 1)
             if self.occ_map[x, y, z] == 0:
                 return x, y, z
-            else:
-                print(self.occ_map[x, y, z])
+            # else:
+            #     print(self.occ_map[x, y, z])
 
     def generate_neural_sample(self) -> tuple[int, int, int]:
         while True:
@@ -103,7 +105,8 @@ class RRTStar:
             # Convert the index back to 2D coordinates
             height, width, depth = self.heat_map.shape
             heat_map_shape = height, width, depth
-            x, y, z = np.unravel_index(index-1, heat_map_shape)  # TODO
+            # x, y, z = np.unravel_index(index-1, heat_map_shape)  # TODO
+            x, y, z = np.unravel_index(index, heat_map_shape)
             if self.occ_map[x, y, z] == 0:
                 return x, y, z  # TODO
             # else:
@@ -164,6 +167,7 @@ class RRTStar:
             y = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
             z = int(point1[2] - ((dis_int * (point1[2] - point2[2])) / dist))
             if self.occ_map[x, y, z] != 0:
+                # print(self.occ_map[x, y, z])
                 return False
 
         return True
@@ -227,7 +231,7 @@ class RRTStar:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int, int]]:
+    def rrt_star(self) -> tuple[list[tuple[int, int, int]], int]:
         goal_node = None
 
         for i in range(self.max_iterations):
@@ -261,7 +265,7 @@ class RRTStar:
 
         # Find the best path from the goal to the start
         path = self.find_path(goal_node)
-        return path
+        return path, self.iteration_no
 
     def visualize_path(self, path: list[tuple[int, int, int]]):
         fig = plt.figure()
@@ -343,7 +347,7 @@ def generate_paths():
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=visualized_output_masked, start=start, goal=finish,
                          max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.5)
 
-    path = rrt_neural.rrt_star()
+    path, iterations = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
 
     output_indices = np.nonzero(visualized_output_masked)

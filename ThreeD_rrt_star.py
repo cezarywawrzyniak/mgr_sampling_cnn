@@ -1,14 +1,15 @@
 import glob
-import cv2
 import random
 import math
+from typing import Tuple, List
+
 import numpy as np
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 
 MAPS_DIRECTORY = f'/home/czarek/mgr/3D_maps/start_finish/*.npy'
 MAX_ITERATIONS = 5000
-GOAL_THRESHOLD = 5.0
+GOAL_THRESHOLD = 3.0
 
 
 def get_blank_maps_list() -> list:
@@ -67,6 +68,8 @@ class RRTStar:
             z = random.randint(0, self.map_depth - 1)
             if self.occ_map[x, y, z] == 0:
                 return x, y, z
+            # else:
+            #     print(self.occ_map[x, y, z])
 
     def find_nearest_neighbor(self, sample) -> Node:
         nearest_node = None
@@ -123,6 +126,7 @@ class RRTStar:
             y = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
             z = int(point1[2] - ((dis_int * (point1[2] - point2[2])) / dist))
             if self.occ_map[x, y, z] != 0:
+                # print(self.occ_map[x, y, z])
                 return False
 
         return True
@@ -186,15 +190,15 @@ class RRTStar:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int, int]]:
+    def rrt_star(self) -> tuple[list[tuple[int, int, int]], int]:
         goal_node = None
 
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=3)
-            print("ITERATION:", self.iteration_no)
-            print("BEST DISTANCE:", self.best_distance)
-            print("SEARCH RADIUS:", self.search_radius)
+            # print("ITERATION:", self.iteration_no)
+            # print("BEST DISTANCE:", self.best_distance)
+            # print("SEARCH RADIUS:", self.search_radius)
 
             random_sample = self.generate_random_sample()
 
@@ -217,7 +221,7 @@ class RRTStar:
 
         # Find the best path from the goal to the start
         path = self.find_path(goal_node)
-        return path
+        return path, self.iteration_no
 
     def visualize_path(self, path: list[tuple[int, int, int]]):
         fig = plt.figure()
@@ -264,7 +268,7 @@ def generate_paths():
 
         rrt = RRTStar(occ_map=occ_map, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                       goal_threshold=GOAL_THRESHOLD)
-        path = rrt.rrt_star()
+        path, iterations = rrt.rrt_star()
 
         finished = True
         if path:
