@@ -65,7 +65,7 @@ class RRTStar:
             x = random.randint(0, self.map_width - 1)
             y = random.randint(0, self.map_height - 1)
             z = random.randint(0, self.map_depth - 1)
-            if self.occ_map[x, y, z] != 255:
+            if self.occ_map[x, y, z] == 0:
                 return x, y, z
 
     def find_nearest_neighbor(self, sample) -> Node:
@@ -122,7 +122,7 @@ class RRTStar:
             x = int(point1[0] - ((dis_int * (point1[0] - point2[0])) / dist))
             y = int(point1[1] - ((dis_int * (point1[1] - point2[1])) / dist))
             z = int(point1[2] - ((dis_int * (point1[2] - point2[2])) / dist))
-            if self.occ_map[x, y, z] == 255:
+            if self.occ_map[x, y, z] != 0:
                 return False
 
         return True
@@ -224,7 +224,7 @@ class RRTStar:
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot occupancy map
-        x_occ, y_occ, z_occ = np.where(self.occ_map == 255)
+        x_occ, y_occ, z_occ = np.where(self.occ_map == 1.0)
         ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
 
         # Plot path

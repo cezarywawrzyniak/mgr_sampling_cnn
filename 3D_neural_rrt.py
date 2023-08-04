@@ -10,7 +10,7 @@ from time import perf_counter
 from ThreeD_train import ThreeD_UNet_cooler, MapsDataModule
 
 BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn.pth"
+MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 5.0
 
