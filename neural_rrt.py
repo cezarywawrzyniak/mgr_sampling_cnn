@@ -97,7 +97,8 @@ class RRTStar:
         # Convert the index back to 2D coordinates
         height, width, _ = self.heat_map.shape
         heat_map_shape = height, width
-        y, x = np.unravel_index(index-1, heat_map_shape)
+        # y, x = np.unravel_index(index - 1, heat_map_shape)  # TODO
+        y, x = np.unravel_index(index, heat_map_shape)
         return y, x
 
     def find_nearest_neighbor(self, sample) -> Node:
