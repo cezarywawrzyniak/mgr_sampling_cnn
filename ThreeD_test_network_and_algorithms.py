@@ -65,9 +65,9 @@ def astar_pathfinding(occ_map, start, finish):
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("A*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
+    # print("A*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
 
     # visualize_astar_path(occ_map_gray, path, start, finish)
     return calculate_time, path_length
@@ -81,10 +81,10 @@ def rrt_star_pathfinding(occ_map, start, finish):
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("RRT*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
-    print("ITERATIONS:", iterations)
+    # print("RRT*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
+    # print("ITERATIONS:", iterations)
 
     # rrt.visualize_path(path)
     return calculate_time, path_length, iterations
@@ -110,10 +110,10 @@ def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     path_length = calculate_length(path)
-    print("NeuralRRT*")
-    print("CALCULATE_TIME:", calculate_time)
-    print("PATH LENGTH:", path_length)
-    print("ITERATIONS:", iterations)
+    # print("NeuralRRT*")
+    # print("CALCULATE_TIME:", calculate_time)
+    # print("PATH LENGTH:", path_length)
+    # print("ITERATIONS:", iterations)
 
     # rrt_neural.visualize_path(path)
     #
