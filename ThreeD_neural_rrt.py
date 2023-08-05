@@ -105,6 +105,10 @@ class RRTStar:
             # Convert the index back to 2D coordinates
             height, width, depth = self.heat_map.shape
             heat_map_shape = height, width, depth
+
+            # Ensure the index is within bounds
+            index = min(max(index, 0), np.prod(heat_map_shape) - 1)
+
             # x, y, z = np.unravel_index(index-1, heat_map_shape)  # TODO
             x, y, z = np.unravel_index(index, heat_map_shape)
             if self.occ_map[x, y, z] == 0:

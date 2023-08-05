@@ -105,7 +105,7 @@ def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
     visualized_output_masked[~visualized_output_binary] = 0
 
     rrt_neural = NeuralRRTStar(occ_map=occ_map, heat_map=visualized_output_masked, start=start, goal=finish,
-                               max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.5)
+                               max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
     path, iterations = rrt_neural.rrt_star()
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
@@ -173,14 +173,14 @@ def main():
                    neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations]
         df.loc[len(df)] = new_row
         print("ROW NO:", i)
-        if i >= 1000:
+        if i >= 100:
             break
 
     print(df)
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     print("CALCULATE_TIME:", calculate_time)
-    df.to_excel('3D_results.xlsx', index=True)
+    df.to_excel('3D_results_vol2.xlsx', index=True)
 
 
 if __name__ == '__main__':
