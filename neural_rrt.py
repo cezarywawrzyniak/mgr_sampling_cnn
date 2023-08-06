@@ -97,7 +97,11 @@ class RRTStar:
         # Convert the index back to 2D coordinates
         height, width, _ = self.heat_map.shape
         heat_map_shape = height, width
-        # y, x = np.unravel_index(index - 1, heat_map_shape)  # TODO
+
+        # Ensure the index is within bounds
+        index = min(max(index, 0), np.prod(heat_map_shape) - 1)
+
+        # y, x = np.unravel_index(index - 1, heat_map_shape)  # TODO CHECK NEW VERSION
         y, x = np.unravel_index(index, heat_map_shape)
         return y, x
 
@@ -363,11 +367,18 @@ def generate_paths():
     y_finish = coords.data.tolist()[0][0][1][1]
     start = (y_start, x_start)
     finish = (y_finish, x_finish)
+    # print("START", start)
+    # print("FINISH", finish)
 
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                          goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
     path = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
+
+    # f, axarr = plt.subplots(1, 2)
+    # axarr[0].imshow(occ_map)
+    # axarr[1].imshow(clipped[0])
+    # plt.show()
 
     if path:
         rrt_neural.visualize_tree(ideal_mask)

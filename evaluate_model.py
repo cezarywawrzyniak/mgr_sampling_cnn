@@ -1,14 +1,14 @@
 import torch
 
 from pathlib import Path
-from train_0 import UNet_cooler, MapsDataModule
+from train import UNet_cooler, MapsDataModule
 import matplotlib.pyplot as plt
 import numpy as np
 from torch import nn
 from torchviz import make_dot
 from torchview import draw_graph
 
-MODEL_PATH = "sampling_cnn_vol2.pth"
+MODEL_PATH = "sampling_cnn_vol3_32.pth"
 BASE_PATH = Path('/home/czarek/mgr/eval_data')
 
 model = UNet_cooler()
@@ -42,7 +42,7 @@ image_show = image_show.transpose((0, 2, 3, 1))
 
 with torch.no_grad():
     output = model(image, coords)
-    clipped = torch.clamp(output, min=-10, max=1)
+    clipped = torch.clamp(output, min=-3, max=1)
     # print(model)
 # make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
 
