@@ -241,7 +241,7 @@ class RRTStar:
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=3)
-            # print("ITERATION:", self.iteration_no)
+            print("ITERATION:", self.iteration_no)
             # print("BEST DISTANCE:", self.best_distance)
             # print("SEARCH RADIUS:", self.search_radius)
 
@@ -277,13 +277,17 @@ class RRTStar:
 
         # Plot occupancy map
         x_occ, y_occ, z_occ = np.where(self.occ_map == 1.0)
-        # ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
+        occupied_mask = self.occ_map.astype(bool)
+        color = np.zeros(self.occ_map.shape + (4,))
+        color[occupied_mask] = (0, 0, 0, 0.2)
+        # ax.scatter(x_occ, y_occ, z_occ, c='k', marker='o', label='Obstacles')
+        ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
 
         # Plot path
         z_values = [position[2] for position in path]
         y_values = [position[1] for position in path]
         x_values = [position[0] for position in path]
-        ax.plot3D(x_values, y_values, z_values, 'r-', linewidth=2, label='Path')
+        ax.plot3D(x_values, y_values, z_values, 'r-', linewidth=8, label='Path')
 
         # Plot nodes and connections
         for node in self.nodes:
@@ -349,7 +353,7 @@ def generate_paths():
     visualized_output_masked[~visualized_output_binary] = 0
 
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=visualized_output_masked, start=start, goal=finish,
-                         max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.5)
+                         max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
 
     path, iterations = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
@@ -377,9 +381,24 @@ def generate_paths():
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
     # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
-    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors_output, cmap='jet', marker='o')
-    ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
-    ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
+    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=output_colors, cmap='jet', marker='o')
+    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
+    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
+    ax.set_xlim(0, visualized_mask.shape[0])
+    ax.set_ylim(0, visualized_mask.shape[1])
+    ax.set_zlim(0, visualized_mask.shape[2])
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
+    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
+    ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=output_colors, cmap='jet', marker='o')
+    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
+    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
     ax.set_xlim(0, visualized_mask.shape[0])
     ax.set_ylim(0, visualized_mask.shape[1])
     ax.set_zlim(0, visualized_mask.shape[2])
