@@ -42,7 +42,7 @@ image_show = image_show.transpose((0, 2, 3, 1))
 
 with torch.no_grad():
     output = model(image, coords)
-    clipped = torch.clamp(output, min=-3, max=1)
+    clipped = torch.clamp(output, min=-5, max=1)
     # print(model)
 # make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
 
