@@ -46,14 +46,14 @@ color[occupied_mask] = (0, 0, 0, 0.2)
 
 # Obtain the indices of the path positions
 indices = np.nonzero(visualized_image == 255)
-ax.scatter(indices[0], indices[1], indices[2], c='k', marker='s')
-# ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
+# ax.scatter(indices[0], indices[1], indices[2], c='k', marker='s')
+ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
 
 path_indices = np.nonzero(path)
 print(path_indices)
 colors = path[path_indices]
 print(colors)
-# ax.scatter(path_indices[0], path_indices[1], path_indices[2], c=colors, cmap='jet', marker='o')
+ax.scatter(path_indices[0], path_indices[1], path_indices[2], c=colors, cmap='jet', marker='o')
 
 # Set plot limits based on the image dimensions
 ax.set_xlim(0, visualized_image.shape[0])
@@ -67,7 +67,7 @@ plt.show()
 
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(path_indices[0], path_indices[1], path_indices[2], c=colors, cmap='jet', marker='s')
+ax.scatter(path_indices[0], path_indices[1], path_indices[2], c=colors, cmap='jet', marker='o', s=50)
 ax.set_xlim(0, visualized_image.shape[0])
 ax.set_ylim(0, visualized_image.shape[1])
 ax.set_zlim(0, visualized_image.shape[2])
