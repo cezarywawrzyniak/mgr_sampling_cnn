@@ -40,11 +40,11 @@ print(f'Finish X:{finish[0]}, Y:{finish[1]}, Z:{finish[2]}')
 
 with torch.no_grad():
     output = model(image, coords)
-    # clipped = torch.clamp(output, min=0, max=1)
     # print(model)
 # make_dot(output, params=dict(list(model.named_parameters()))).render("torchviz", format="png")
 
-# model_graph = draw_graph(model, input_data=(image, coords), expand_nested=True, save_graph=True, filename='torchview')
+# model_graph = draw_graph(model, input_data=(image, coords), expand_nested=True, save_graph=True,
+#                          filename='torchview_3D')
 
 visualized_image = np.array(image[0].detach().cpu().numpy())
 visualized_image = visualized_image.transpose((1, 2, 0))
