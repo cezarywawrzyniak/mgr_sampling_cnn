@@ -9,7 +9,7 @@ from torchviz import make_dot
 from torchview import draw_graph
 
 MODEL_PATH = "sampling_cnn_vol3_32.pth"
-BASE_PATH = Path('/home/czarek/mgr/eval_data')
+BASE_PATH = Path('/home/czarek/mgr/eval_data/test')
 
 model = UNet_cooler()
 model.load_state_dict(torch.load(MODEL_PATH))

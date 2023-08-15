@@ -356,7 +356,7 @@ def generate_paths():
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
-        clipped = torch.clamp(output, min=-10, max=1)
+        clipped = torch.clamp(output, min=-5, max=1)
 
     clipped = clipped.detach().cpu().numpy()
     clipped = clipped.transpose((0, 2, 3, 1))
