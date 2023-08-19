@@ -25,11 +25,11 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:snap-bbox="true"
-     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-bbox-edge-midpoints="false"
      inkscape:snap-midpoints="false"
      inkscape:snap-center="true"
      inkscape:bbox-paths="false"
-     inkscape:snap-bbox-midpoints="false"
+     inkscape:snap-bbox-midpoints="true"
      inkscape:zoom="1.2810466"
      inkscape:cx="338.00488"
      inkscape:cy="204.91058"
@@ -42,7 +42,8 @@
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     inkscape:snap-nodes="false" />
   <defs
      id="defs2">
     <marker
@@ -319,25 +320,29 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-10.169,-13.785842)">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.332153;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker121276)"
+       d="m 56.507626,35.845287 14.974555,0.007"
+       id="path118206" />
     <rect
-       style="fill:#a7c2ba;fill-opacity:1;stroke:#000000;stroke-width:0.203791;stroke-opacity:1"
+       style="fill:#a7c2ba;fill-opacity:1;stroke:#000000;stroke-width:0.20769;stroke-opacity:1"
        id="rect5223"
-       width="46.36364"
-       height="43.914104"
-       x="10.270896"
-       y="13.887738"
-       ry="4.4226637" />
+       width="48.159302"
+       height="43.910206"
+       x="9.3730555"
+       y="13.889688"
+       ry="4.4222708" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.26066px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
-       x="13.388821"
-       y="18.022036"
+       x="10.952888"
+       y="18.021877"
        id="text24048"><tspan
          sodipodi:role="line"
          id="tspan24046"
          style="font-size:3.26066px;stroke-width:0.203791"
-         x="13.388821"
-         y="18.022036">Generacja map zajętości</tspan></text>
+         x="10.952888"
+         y="18.021877">Generowanie map zajętości</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:2.4455px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
@@ -360,14 +365,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.26066px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
-       x="83.018982"
-       y="18.022144"
+       x="80.583046"
+       y="18.021877"
        id="text24048-5"><tspan
          sodipodi:role="line"
          id="tspan24046-3"
          style="font-size:3.26066px;stroke-width:0.203791"
-         x="83.018982"
-         y="18.022144">Generacja zadań ruchu</tspan></text>
+         x="80.583046"
+         y="18.021877">Generowanie zadań ruchu</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:2.4455px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
@@ -406,14 +411,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.26066px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
-       x="146.96306"
-       y="18.021879"
+       x="144.52711"
+       y="18.021877"
        id="text24048-5-2"><tspan
          sodipodi:role="line"
          id="tspan24046-3-7"
          style="font-size:3.26066px;stroke-width:0.203791"
-         x="146.96306"
-         y="18.021879">Generacja ścieżki A*</tspan></text>
+         x="144.52711"
+         y="18.021877">Generowanie ścieżki A*</tspan></text>
     <text
        xml:space="preserve"
        transform="scale(0.26458333)"
@@ -433,24 +438,24 @@
        x="148.09653"
        y="20.193344" />
     <rect
-       style="fill:#a7c2ba;fill-opacity:1;stroke:#000000;stroke-width:0.205024;stroke-opacity:1"
+       style="fill:#a7c2ba;fill-opacity:1;stroke:#000000;stroke-width:0.210602;stroke-opacity:1"
        id="rect5223-7-1-1"
-       width="46.927494"
-       height="43.912868"
-       x="195.95952"
-       y="13.888354"
-       ry="4.4225392" />
+       width="49.5224"
+       height="43.907284"
+       x="194.66206"
+       y="13.89115"
+       ry="4.4219766" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:3.26066px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.203791"
-       x="198.63417"
-       y="17.880032"
+       x="196.19823"
+       y="17.880178"
        id="text24048-5-2-8"><tspan
          sodipodi:role="line"
          id="tspan24046-3-7-7"
          style="font-size:3.26066px;stroke-width:0.203791"
-         x="198.63417"
-         y="17.880032">Generacja maski dla sieci</tspan></text>
+         x="196.19823"
+         y="17.880178">Generowanie maski dla sieci</tspan></text>
     <image
        width="31.302889"
        height="31.302889"
@@ -459,10 +464,6 @@
        id="image105426"
        x="203.77182"
        y="20.193348" />
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.332153;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker121276)"
-       d="m 56.507626,35.845287 14.974555,0.007"
-       id="path118206" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.295878;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker121276-2)"
        d="m 131.801,35.845345 11.06648,0.0075"
