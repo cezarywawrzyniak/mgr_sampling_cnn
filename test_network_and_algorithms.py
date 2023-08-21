@@ -173,7 +173,7 @@ def main():
         df.loc[len(df)] = new_row
         print("ROW NO:", i)
         # break
-        if i >= 2:
+        if i >= 1000:
             break
 
     print(df)
