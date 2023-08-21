@@ -1,5 +1,3 @@
-from typing import Tuple, List
-
 import torch
 import random
 import math
@@ -9,10 +7,10 @@ from scipy.spatial import distance
 from pathlib import Path
 from time import perf_counter
 
-from train_0 import UNet_cooler, MapsDataModule
+from train import UNet_cooler, MapsDataModule
 
 BASE_PATH = Path('/home/czarek/mgr/eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol2.pth"
+MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol3_32.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 5.0
 
@@ -358,7 +356,7 @@ def generate_paths():
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
-        clipped = torch.clamp(output, min=-5, max=1)
+        clipped = torch.clamp(output, min=-3, max=1)
 
     clipped = clipped.detach().cpu().numpy()
     clipped = clipped.transpose((0, 2, 3, 1))
