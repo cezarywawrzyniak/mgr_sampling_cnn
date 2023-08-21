@@ -102,7 +102,7 @@ def rrt_star_pathfinding(occ_map, start, finish):
     # print("PATH LENGTH:", path_length)
 
     # rrt.visualize_path(path)
-    return calculate_time, path_length
+    return calculate_time, path_length, iterations
 
 
 def neural_rrt_star_pathfinding(model, image, mask, coords, occ_map, start, finish):
@@ -149,7 +149,7 @@ def main():
             image, mask, coords = batch
             occ_map, start, finish = get_occmap_and_coordinates(image, coords)
             astar_time, astar_length = astar_pathfinding(occ_map, start, finish)
-            rrt_star_time, rrt_star_length = rrt_star_pathfinding(occ_map, start, finish)
+            rrt_star_time, rrt_star_length, rrt_star_iterations = rrt_star_pathfinding(occ_map, start, finish)
 
             neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations = (
                 neural_rrt_star_pathfinding(model, image, mask, coords, occ_map, start, finish))
