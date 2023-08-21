@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 import torch
 import random
 import math
@@ -219,13 +221,13 @@ class RRTStar:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int]]:
+    def rrt_star(self) -> tuple[list[tuple[int, int]], int]:
         goal_node = None
 
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=2)
-            # print("ITERATION:", self.iteration_no)
+            print("ITERATION:", self.iteration_no)
             # print("BEST DISTANCE:", self.best_distance)
             # print("SEARCH RADIUS:", self.search_radius)
 
@@ -253,7 +255,7 @@ class RRTStar:
 
         # Find the best path from the goal to the start
         path = self.find_path(goal_node)
-        return path
+        return path, self.iteration_no
 
     def visualize_tree(self, mask: np.array):
         fig, ax = plt.subplots(1, 3)
