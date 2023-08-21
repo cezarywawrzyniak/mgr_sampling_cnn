@@ -124,10 +124,10 @@ def neural_rrt_star_pathfinding(model, image, mask, coords, occ_map, start, fini
     # print("CALCULATE_TIME:", calculate_time)
     # print("PATH LENGTH:", path_length)
 
-    ideal_mask = mask.data.detach().cpu().numpy()
-    ideal_mask = ideal_mask.transpose((0, 2, 3, 1))
-    ideal_mask = ideal_mask[0]
-    rrt_neural.visualize_path(path, ideal_mask)
+    # ideal_mask = mask.data.detach().cpu().numpy()
+    # ideal_mask = ideal_mask.transpose((0, 2, 3, 1))
+    # ideal_mask = ideal_mask[0]
+    # rrt_neural.visualize_path(path, ideal_mask)
     return calculate_time, path_length, iterations
 
 
@@ -145,7 +145,7 @@ def main():
     timer_start = perf_counter()
     for batch in dataloader:
         i += 1
-        for j in range(10):
+        for j in range(3):
             image, mask, coords = batch
             occ_map, start, finish = get_occmap_and_coordinates(image, coords)
             astar_time, astar_length = astar_pathfinding(occ_map, start, finish)
