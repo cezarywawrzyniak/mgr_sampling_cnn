@@ -372,7 +372,7 @@ def generate_paths():
 
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                          goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
-    path = rrt_neural.rrt_star()
+    path, iterations = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
 
     # f, axarr = plt.subplots(1, 2)
