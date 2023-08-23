@@ -13,7 +13,7 @@ from ThreeD_rrt_star import RRTStar
 from ThreeD_neural_rrt import RRTStar as NeuralRRTStar
 
 BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2.pth"
+MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2_47.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 3.0
 
@@ -97,9 +97,9 @@ def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
 
     visualized_output = np.array(output[0, 0].detach().cpu().numpy())
     visualized_output = ((visualized_output - visualized_output.min()) / (
-            visualized_output.max() - visualized_output.min())) * 255
+            visualized_output.max() - visualized_output.min())) * 1.0
     # visualized_output = visualized_output.transpose((1, 2, 0))
-    threshold_output = 250
+    threshold_output = 0.96
     visualized_output_binary = (visualized_output > threshold_output)
     visualized_output_masked = visualized_output.copy()
     visualized_output_masked[~visualized_output_binary] = 0
@@ -173,14 +173,14 @@ def main():
                    neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations]
         df.loc[len(df)] = new_row
         print("ROW NO:", i)
-        if i >= 100:
+        if i >= 1000:
             break
 
     print(df)
     timer_finish = perf_counter()
     calculate_time = timer_finish - timer_start
     print("CALCULATE_TIME:", calculate_time)
-    df.to_excel('3D_results_vol2.xlsx', index=True)
+    df.to_excel('3D_results_vol3_47.xlsx', index=True)
 
 
 if __name__ == '__main__':
