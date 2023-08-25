@@ -12,9 +12,9 @@ from time import perf_counter
 from ThreeD_train import ThreeD_UNet_cooler, MapsDataModule
 
 BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2.pth"
+MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2_47.pth"
 MAX_ITERATIONS = 5000
-GOAL_THRESHOLD = 3.0
+GOAL_THRESHOLD = 50.0
 
 
 def get_blank_maps_list() -> list:
@@ -345,9 +345,9 @@ def generate_paths():
 
     visualized_output = np.array(output[0, 0].detach().cpu().numpy())
     visualized_output = ((visualized_output - visualized_output.min()) / (
-                visualized_output.max() - visualized_output.min())) * 255
+                visualized_output.max() - visualized_output.min())) * 1.0
     # visualized_output = visualized_output.transpose((1, 2, 0))
-    threshold_output = 250
+    threshold_output = 0.96
     visualized_output_binary = (visualized_output > threshold_output)
     visualized_output_masked = visualized_output.copy()
     visualized_output_masked[~visualized_output_binary] = 0
@@ -369,7 +369,7 @@ def generate_paths():
 
     if path:
         print(path)
-        rrt_neural.visualize_path(path)
+        # rrt_neural.visualize_path(path)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
 
@@ -379,7 +379,13 @@ def generate_paths():
 
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
+    # ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
+    occupied_mask = occ_map.astype(bool)
+    color = np.zeros(occ_map.shape + (4,))
+    color[occupied_mask] = (0, 0, 0, 0.2)
+    ax.voxels(occupied_mask, facecolors=color, edgecolors=color)
+    ax.scatter(start[0], start[1], start[2], c='g', marker='o', s=300, label='Start')
+    ax.scatter(finish[0], finish[1], finish[2], c='r', marker='o', s=300, label='Finish')
     # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
     # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=output_colors, cmap='jet', marker='o')
     # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')

@@ -8,8 +8,8 @@ from torch import nn
 from torchviz import make_dot
 from torchview import draw_graph
 
-MODEL_PATH = "3D_sampling_cnn_vol2.pth"
-BASE_PATH = Path('/home/czarek/mgr/3D_eval_data/test')
+MODEL_PATH = "3D_sampling_cnn_vol2_47.pth"
+BASE_PATH = Path('/home/czarek/mgr/3D_eval_data/')
 
 model = ThreeD_UNet_cooler()
 model.load_state_dict(torch.load(MODEL_PATH))
@@ -50,6 +50,10 @@ visualized_image = np.array(image[0].detach().cpu().numpy())
 visualized_image = visualized_image.transpose((1, 2, 0))
 image_indices = np.nonzero(visualized_image)
 
+voxels_mask = visualized_image.astype(bool)
+voxels_color = np.zeros(visualized_image.shape + (4,))
+voxels_color[voxels_mask] = (0, 0, 0, 0.2)
+
 visualized_mask = np.array(mask[0, 0].detach().cpu().numpy())
 visualized_mask = ((visualized_mask - visualized_mask.min()) / (visualized_mask.max() - visualized_mask.min())) * 255
 mask_indices = np.nonzero(visualized_mask)
@@ -79,12 +83,14 @@ colors_mask = visualized_mask[mask_indices]
 # plt.show()
 
 visualized_output = np.array(output[0, 0].detach().cpu().numpy())
-visualized_output = ((visualized_output - visualized_output.min()) / (visualized_output.max() - visualized_output.min())) * 255
+visualized_output = ((visualized_output - visualized_output.min()) / (visualized_output.max() - visualized_output.min())) * 1.0
 # visualized_output = visualized_output.transpose((1, 2, 0))
-threshold_output = 250
+threshold_output = 0.96
 visualized_output_binary = (visualized_output > threshold_output)
 visualized_output_masked = visualized_output.copy()
 visualized_output_masked[~visualized_output_binary] = 0
+unique_values = list(set(visualized_output_masked.flatten()))
+print(unique_values)
 
 output_base_indices = np.nonzero(visualized_output)
 colors_base = visualized_output[output_base_indices]
@@ -102,7 +108,7 @@ colors = visualized_output_masked[output_indices]
 # ax.set_ylabel('Y')
 # ax.set_zlabel('Z')
 # plt.show()
-#
+
 # fig = plt.figure(figsize=(8, 8))
 # ax = fig.add_subplot(111, projection='3d')
 # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
@@ -114,20 +120,47 @@ colors = visualized_output_masked[output_indices]
 # ax.set_zlabel('Z')
 # plt.show()
 
-# Create subplots
-fig = plt.figure(figsize=(20, 5))
+# # Set of 4 plots
+# fig = plt.figure(figsize=(20, 5))
+#
+# # Create four subplots with 3D projections
+# ax1 = fig.add_subplot(141, projection='3d')
+# ax2 = fig.add_subplot(142, projection='3d')
+# ax3 = fig.add_subplot(143, projection='3d')
+# ax4 = fig.add_subplot(144, projection='3d')
+#
+# # Scatter plots
+# ax1.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
+# ax2.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
+# ax3.scatter(output_base_indices[0], output_base_indices[1], output_base_indices[2], c=colors_base, cmap='jet', marker='o')
+# ax4.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
+#
+# # Set axis limits
+# for ax in [ax1, ax2, ax3, ax4]:
+#     ax.set_xlim(0, visualized_output_masked.shape[0])
+#     ax.set_ylim(0, visualized_output_masked.shape[1])
+#     ax.set_zlim(0, visualized_output_masked.shape[2])
+#     ax.set_xlabel('X')
+#     ax.set_ylabel('Y')
+#     ax.set_zlabel('Z')
+#
+# plt.tight_layout()
+# plt.show()
+
+
+# Set of 3 plots
+fig = plt.figure(figsize=(15, 5))
 
 # Create four subplots with 3D projections
-ax1 = fig.add_subplot(141, projection='3d')
-ax2 = fig.add_subplot(142, projection='3d')
-ax3 = fig.add_subplot(143, projection='3d')
-ax4 = fig.add_subplot(144, projection='3d')
+ax1 = fig.add_subplot(131, projection='3d')
+ax2 = fig.add_subplot(132, projection='3d')
+ax3 = fig.add_subplot(133, projection='3d')
 
 # Scatter plots
 ax1.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
+# ax1.voxels(voxels_mask, facecolors=voxels_color, edgecolors=voxels_color)
 ax2.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
-ax3.scatter(output_base_indices[0], output_base_indices[1], output_base_indices[2], c=colors_base, cmap='jet', marker='o')
-ax4.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
+ax3.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
 
 # Set axis limits
 for ax in [ax1, ax2, ax3]:
