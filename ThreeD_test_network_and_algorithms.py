@@ -12,7 +12,7 @@ from ThreeD_generate_paths import astar
 from ThreeD_rrt_star import RRTStar
 from ThreeD_neural_rrt import RRTStar as NeuralRRTStar
 
-BASE_PATH = Path('/home/czarek/mgr/3D_eval_data')
+BASE_PATH = Path('/home/czarek/mgr/3D_eval_data/test/oneshot')
 MODEL_PATH = "/home/czarek/mgr/models/3D_sampling_cnn_vol2_47.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 3.0
@@ -90,7 +90,7 @@ def rrt_star_pathfinding(occ_map, start, finish):
     return calculate_time, path_length, iterations
 
 
-def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
+def neural_rrt_star_pathfinding(model, image, mask, coords, occ_map, start, finish):
     timer_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
@@ -103,6 +103,8 @@ def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
     visualized_output_binary = (visualized_output > threshold_output)
     visualized_output_masked = visualized_output.copy()
     visualized_output_masked[~visualized_output_binary] = 0
+    # output_indices = np.nonzero(visualized_output_masked)
+    # colors = visualized_output_masked[output_indices]
 
     rrt_neural = NeuralRRTStar(occ_map=occ_map, heat_map=visualized_output_masked, start=start, goal=finish,
                                max_iterations=MAX_ITERATIONS, goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
@@ -128,19 +130,30 @@ def neural_rrt_star_pathfinding(model, image, coords, occ_map, start, finish):
     #
     # occ_map_indices = np.nonzero(occ_map)
     #
-    # fig = plt.figure(figsize=(8, 8))
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
-    # # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
-    # # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors_output, cmap='jet', marker='o')
-    # ax.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c='b', marker='o')
-    # ax.scatter(output_indices[0], output_indices[1], output_indices[2], c='r', marker='o')
-    # ax.set_xlim(0, visualized_mask.shape[0])
-    # ax.set_ylim(0, visualized_mask.shape[1])
-    # ax.set_zlim(0, visualized_mask.shape[2])
-    # ax.set_xlabel('X')
-    # ax.set_ylabel('Y')
-    # ax.set_zlabel('Z')
+    # # Set of 3 plots
+    # fig = plt.figure(figsize=(15, 5))
+    #
+    # # Create four subplots with 3D projections
+    # ax1 = fig.add_subplot(131, projection='3d')
+    # ax2 = fig.add_subplot(132, projection='3d')
+    # ax3 = fig.add_subplot(133, projection='3d')
+    #
+    # # Scatter plots
+    # ax1.scatter(occ_map_indices[0], occ_map_indices[1], occ_map_indices[2], c='k', marker='o')
+    # # ax1.voxels(voxels_mask, facecolors=voxels_color, edgecolors=voxels_color)
+    # ax2.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=mask_colors, cmap='jet', marker='o')
+    # ax3.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
+    #
+    # # Set axis limits
+    # for ax in [ax1, ax2, ax3]:
+    #     ax.set_xlim(0, visualized_output_masked.shape[0])
+    #     ax.set_ylim(0, visualized_output_masked.shape[1])
+    #     ax.set_zlim(0, visualized_output_masked.shape[2])
+    #     ax.set_xlabel('X')
+    #     ax.set_ylabel('Y')
+    #     ax.set_zlabel('Z')
+    #
+    # plt.tight_layout()
     # plt.show()
 
     return calculate_time, path_length, iterations
@@ -159,20 +172,18 @@ def main():
     timer_start = perf_counter()
     for batch in dataloader:
         i += 1
+        # for j in range(100):
         image, mask, coords = batch
         occ_map, start, finish = get_occmap_and_coordinates(image, coords)
         astar_time, astar_length = astar_pathfinding(occ_map, start, finish)
         rrt_star_time, rrt_star_length, rrt_star_iterations = rrt_star_pathfinding(occ_map, start, finish)
-        neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations = neural_rrt_star_pathfinding(model,
-                                                                                                               image,
-                                                                                                               coords,
-                                                                                                               occ_map,
-                                                                                                               start,
-                                                                                                               finish)
+        neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations = neural_rrt_star_pathfinding(
+            model, image, mask, coords, occ_map, start, finish)
         new_row = [astar_time, astar_length, '-', rrt_star_time, rrt_star_length, rrt_star_iterations,
                    neural_rrt_star_time, neural_rrt_star_length, neural_rrt_star_iterations]
         df.loc[len(df)] = new_row
         print("ROW NO:", i)
+        # break
         if i >= 1000:
             break
 
