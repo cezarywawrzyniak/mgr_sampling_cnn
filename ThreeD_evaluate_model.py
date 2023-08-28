@@ -90,7 +90,7 @@ visualized_output_binary = (visualized_output > threshold_output)
 visualized_output_masked = visualized_output.copy()
 visualized_output_masked[~visualized_output_binary] = 0
 unique_values = list(set(visualized_output_masked.flatten()))
-print(unique_values)
+# print(unique_values)
 
 output_base_indices = np.nonzero(visualized_output)
 colors_base = visualized_output[output_base_indices]
@@ -157,8 +157,10 @@ ax2 = fig.add_subplot(132, projection='3d')
 ax3 = fig.add_subplot(133, projection='3d')
 
 # Scatter plots
-ax1.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
-# ax1.voxels(voxels_mask, facecolors=voxels_color, edgecolors=voxels_color)
+# ax1.scatter(image_indices[0], image_indices[1], image_indices[2], c='k', marker='o')
+ax1.voxels(voxels_mask, facecolors=voxels_color, edgecolors=voxels_color)
+ax1.scatter(start[0], start[1], start[2], c='g', marker='o', s=300, label='Start')
+ax1.scatter(finish[0], finish[1], finish[2], c='r', marker='o', s=300, label='Finish')
 ax2.scatter(mask_indices[0], mask_indices[1], mask_indices[2], c=colors_mask, cmap='jet', marker='o')
 ax3.scatter(output_indices[0], output_indices[1], output_indices[2], c=colors, cmap='jet', marker='o')
 
