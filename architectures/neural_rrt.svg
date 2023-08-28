@@ -35,13 +35,13 @@
      inkscape:snap-others="true"
      inkscape:snap-smooth-nodes="true"
      inkscape:snap-nodes="true"
-     inkscape:zoom="0.64"
-     inkscape:cx="443.75"
-     inkscape:cy="389.84375"
+     inkscape:zoom="1.38"
+     inkscape:cx="525.36232"
+     inkscape:cy="245.28986"
      inkscape:window-width="2560"
      inkscape:window-height="1376"
-     inkscape:window-x="2048"
-     inkscape:window-y="186"
+     inkscape:window-x="2560"
+     inkscape:window-y="166"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
      fit-margin-top="0"
@@ -398,7 +398,7 @@
          style="font-size:2.79042px;text-align:center;text-anchor:middle;stroke-width:0.149487"
          x="135.60199"
          y="91.727776"
-         id="tspan224526">ociągnięcia celu?</tspan></text>
+         id="tspan224526">osiągnięcia celu?</tspan></text>
     <g
        id="g1018-2-5-7-9"
        transform="matrix(0.73922902,0,0,0.33196807,28.840009,75.307065)"
@@ -431,19 +431,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:2.79042px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.149487"
-       x="135.88707"
-       y="134.61212"
+       x="135.89099"
+       y="136.35614"
        id="text4419-1-3-0-2-1-4-5-3"><tspan
          sodipodi:role="line"
          style="font-size:2.79042px;text-align:center;text-anchor:middle;stroke-width:0.149487"
-         x="135.88707"
-         y="134.61212"
-         id="tspan228677">Wyznaczenie ścieżki z drzewa</tspan><tspan
-         sodipodi:role="line"
-         style="font-size:2.79042px;text-align:center;text-anchor:middle;stroke-width:0.149487"
-         x="135.88707"
-         y="138.10014"
-         id="tspan228681">oraz zwrócenie jej</tspan></text>
+         x="135.89099"
+         y="136.35614"
+         id="tspan228681">Wyznaczenie ścieżki z drzewa jej</tspan></text>
     <text
        xml:space="preserve"
        transform="scale(0.26458333)"
@@ -517,7 +512,7 @@
            style="font-size:3.88056px;stroke-width:0.884972;stroke-miterlimit:4;stroke-dasharray:none"
            x="22.312693"
            y="45.389923"
-           id="tspan80084">-maksymalna ilość iteracji</tspan><tspan
+           id="tspan80084">-maksymalna liczba iteracji</tspan><tspan
            sodipodi:role="line"
            style="font-size:3.88056px;stroke-width:0.884972;stroke-miterlimit:4;stroke-dasharray:none"
            x="22.312693"
