@@ -9,9 +9,9 @@ from time import perf_counter
 
 from train import UNet_cooler, MapsDataModule
 
-BASE_PATH = Path('/home/czarek/mgr/eval_data')
+BASE_PATH = Path('/home/czarek/mgr/eval_data/')
 MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol3_32.pth"
-MAX_ITERATIONS = 5000
+MAX_ITERATIONS = 10000
 GOAL_THRESHOLD = 5.0
 
 
@@ -381,7 +381,7 @@ def generate_paths():
     # plt.show()
 
     if path:
-        rrt_neural.visualize_tree(ideal_mask)
+        # rrt_neural.visualize_tree(ideal_mask)
         rrt_neural.visualize_path(path, ideal_mask)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
@@ -389,11 +389,11 @@ def generate_paths():
     timer_rrt_start = perf_counter()
     rrt = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                   goal_threshold=GOAL_THRESHOLD, neural_bias=0.0)
-    path = rrt.rrt_star()
+    path, iterations = rrt.rrt_star()
     timer_rrt_stop = perf_counter()
 
     if path:
-        rrt.visualize_tree(ideal_mask)
+        # rrt.visualize_tree(ideal_mask)
         rrt.visualize_path(path, ideal_mask)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
