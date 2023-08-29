@@ -11,8 +11,8 @@ from train import UNet_cooler, MapsDataModule
 
 BASE_PATH = Path('/home/czarek/mgr/eval_data/')
 MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol3_32.pth"
-MAX_ITERATIONS = 10000
-GOAL_THRESHOLD = 3.0
+MAX_ITERATIONS = 5000
+GOAL_THRESHOLD = 5.0
 
 
 def get_blank_maps_list() -> list:
