@@ -87,13 +87,13 @@ def cost(a: tuple, b: tuple) -> float:
     dz = abs(a[2] - b[2])
 
     if dx == 1 and dy == 1 and dz == 1:
-        # Diagonal movement in all three dimensions
+        # diagonal movement in all three dimensions
         return math.sqrt(3)
     elif (dx == 1 and dy == 1) or (dx == 1 and dz == 1) or (dy == 1 and dz == 1):
-        # Diagonal movement in two dimensions
+        # diagonal movement in two dimensions
         return math.sqrt(2)
     else:
-        # Horizontal or vertical movement
+        # horizontal or vertical movement
         return 1.0
 
 
@@ -141,23 +141,21 @@ def generate_paths():
 def save_and_visualize_path(occ_map: np.array, path: list, directory: str, visualize: bool, save: bool):
     if save:
         dir_save_no_points_map = directory.replace('start_finish', 'paths')
-        # Create a copy of the original map
         path_array_to_save = np.zeros_like(occ_map)
 
-        # Mark the path on an empty array
+        # mark the path
         for position in path:
             path_array_to_save[position] = 255
 
-        # Save the visualized image as a .npy file
         np.save(dir_save_no_points_map, path_array_to_save)
 
         if visualize:
-            # Create 3D scatter plot of the path
+            # 3D scatter plot of the path
             fig = plt.figure(figsize=(8, 8))
             ax = fig.add_subplot(111, projection='3d')
             indices = np.nonzero(path_array_to_save)
             ax.scatter(indices[0], indices[1], indices[2], c='b', marker='o')
-            # Set plot limits based on the image dimensions
+            # plot limits based on the image dimensions
             ax.set_xlim(0, path_array_to_save.shape[0])
             ax.set_ylim(0, path_array_to_save.shape[1])
             ax.set_zlim(0, path_array_to_save.shape[2])
@@ -165,14 +163,14 @@ def save_and_visualize_path(occ_map: np.array, path: list, directory: str, visua
             plt.show()
 
     if visualize:
-        # Create 3D scatter plot of the path
+        # 3D scatter plot of the path
         fig = plt.figure(figsize=(8, 8))
         ax = fig.add_subplot(111, projection='3d')
         visualized_image = np.array(occ_map)
         for position in path:
-            visualized_image[position] = 254  # Set a different value for the path
+            visualized_image[position] = 254  # different value for the path
 
-        # Obtain the indices of the path positions
+        # get indices of the path
         indices = np.nonzero(visualized_image == 255)
         ax.scatter(indices[0], indices[1], indices[2], c='b', marker='o', alpha=0.01)
         # ax.voxels(visualized_image == 255, facecolors='b', edgecolors='k', alpha=0.1)
@@ -180,7 +178,7 @@ def save_and_visualize_path(occ_map: np.array, path: list, directory: str, visua
         path_indices = np.nonzero(visualized_image == 254)
         ax.scatter(path_indices[0], path_indices[1], path_indices[2], c='r', marker='o')
 
-        # Set plot limits based on the image dimensions
+        # plot limits based on the image dimensions
         ax.set_xlim(0, visualized_image.shape[0])
         ax.set_ylim(0, visualized_image.shape[1])
         ax.set_zlim(0, visualized_image.shape[2])

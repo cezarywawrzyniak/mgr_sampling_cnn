@@ -96,7 +96,7 @@ class RRTStar:
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2)
-        new_cost = from_node.cost + dist  # Calculate the new cost
+        new_cost = from_node.cost + dist  # calculate the new cost
 
         new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1],
                          from_node.position[2] + direction[2]), new_cost)
@@ -177,7 +177,7 @@ class RRTStar:
             path.append(current_node.position)
             current_node = current_node.parent
 
-        path.reverse()  # Reverse the path to start from the start node
+        path.reverse()  # reverse the path to start from the start node
         return path
 
     def lebesgue_measure(self, dim: int) -> float:
@@ -211,15 +211,15 @@ class RRTStar:
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
                     goal_node.position = self.goal
-                    # Break for now, if tuned better it can iterate for longer to find better path?
+                    # break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
 
-        if goal_node is None:  # Goal not reached
-            goal_node = self.best_node  # Take the closest node to goal TODO should be checked for obstacle
+        if goal_node is None:  # goal not reached
+            goal_node = self.best_node  # take the closest node to goal
             # return None
 
-        # Find the best path from the goal to the start
+        # find the best path
         path = self.find_path(goal_node)
         return path, self.iteration_no
 
@@ -227,17 +227,17 @@ class RRTStar:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        # Plot occupancy map
+        # plot occupancy map
         x_occ, y_occ, z_occ = np.where(self.occ_map == 1.0)
         ax.scatter(x_occ, y_occ, z_occ, c='k', marker='s', label='Obstacles', s=50)
 
-        # Plot path
+        # plot path
         z_values = [position[2] for position in path]
         y_values = [position[1] for position in path]
         x_values = [position[0] for position in path]
         ax.plot3D(x_values, y_values, z_values, 'r-', linewidth=2, label='Path')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 z_values = [node.position[2], child.position[2]]
@@ -245,7 +245,7 @@ class RRTStar:
                 x_values = [node.position[0], child.position[0]]
                 ax.plot3D(x_values, y_values, z_values, 'b-', alpha=0.2)
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax.scatter(self.start_node.position[0], self.start_node.position[1], self.start_node.position[2], c='g', marker='o', s=100, label='Start')
         if self.goal is not None:

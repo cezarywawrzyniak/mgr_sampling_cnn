@@ -23,7 +23,7 @@ def is_point_in_free_space(point, occ_map):
 
 
 def enlarge_the_path(occ_path, path_path):
-    # Load the occupancy map and path
+    # load the occupancy map and path
     occ_map = np.load(occ_path)
     path = np.load(path_path)
 
@@ -44,7 +44,7 @@ def enlarge_the_path(occ_path, path_path):
 
         path_value = 255
         for i in range(LAYERS):
-            # Generate points in the current layer
+            # generate points in the current layer
             # print(i)
             path_value -= 255/LAYERS-2
             # print(path_value)

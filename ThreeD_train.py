@@ -167,7 +167,7 @@ class ThreeD_UNet_cooler(pl.LightningModule):
         self.final_conv = nn.Conv3d(64, 1, kernel_size=1)
 
     def forward(self, x, coords):
-        # Reshape input so it is (batch_size, channels, depth, height, width) = (batch_size, 1, 80, 80, 80)
+        # reshape input so it is (batch_size, channels, depth, height, width) = (batch_size, 1, 80, 80, 80)
         x = x.unsqueeze(1)
 
         # Encoder

@@ -66,18 +66,18 @@ def visualize_start_finish(occ_map: np.array, path: str, x_start: int, y_start: 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # Create a grid of coordinates
+    # grid of coordinates
     xx, yy, zz = np.meshgrid(np.arange(occ_map.shape[1]+1), np.arange(occ_map.shape[0]+1), np.arange(occ_map.shape[2]+1))
 
-    # Set the color values based on occupancy
+    # color values based on occupancy
     colors = np.zeros(occ_map.shape + (3,))
     colors[occ_map == 0] = [1, 1, 1]  # Set unoccupied places to white
     colors[occ_map == 255] = [0, 0, 0]  # Set occupied places to black
 
-    # Plot the 3D occupancy map
+    # 3D occupancy map
     ax.voxels(xx, yy, zz, occ_map.astype(bool), facecolors=colors)
 
-    # Plot the start and finish positions
+    # plot the start and finish positions
     ax.scatter(x_start, y_start, z_start, c='g', marker='o', s=30, label='Start')
     ax.scatter(x_finish, y_finish, z_finish, c='r', marker='o', s=30, label='Finish')
 

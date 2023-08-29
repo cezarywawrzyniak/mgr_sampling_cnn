@@ -3,10 +3,10 @@ import numpy as np
 
 
 def create_map(width: int, height: int, depth: int) -> np.array:
-    # Create a white map
+    # create an empty map
     occ_map = np.zeros((height, width, depth), dtype=float)
 
-    # Fill with obstacles, for map size 128: 15 40 75
+    # fill with obstacles, for map size 128: 15 40 75
     for _ in range(random.randint(1, 3)):
         occ_map = add_obstacle(occ_map, 20, 55, 10, 20, 10, 20)  # Long in x
 
@@ -26,16 +26,16 @@ def create_map(width: int, height: int, depth: int) -> np.array:
 
 
 def add_obstacle(occ_map: np.array, x_min: int, x_max: int, y_min: int, y_max: int, z_min: int, z_max: int) -> np.array:
-    # Get random placement
+    # random placement
     x_start = random.randint(0, occ_map.shape[0]-1)
     y_start = random.randint(0, occ_map.shape[1]-1)
     z_start = random.randint(0, occ_map.shape[2]-1)
-    # Get random size
+    # random size
     x_end = random.randint(x_start + x_min, x_start + x_max)
     y_end = random.randint(y_start + y_min, y_start + y_max)
     z_end = random.randint(z_start + z_min, z_start + z_max)
 
-    # Add obstacle
+    # add obstacle
     occ_map[x_start:x_end, y_start:y_end, z_start:z_end] = 255
 
     return occ_map
