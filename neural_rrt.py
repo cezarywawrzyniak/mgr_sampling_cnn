@@ -71,37 +71,30 @@ class RRTStar:
                 return y, x
 
     def generate_neural_sample(self) -> tuple[int, int]:
-        # Flatten the heatmap to a 1D array
         flat_heatmap = self.heat_map.flatten()
 
-        # Add a constant to shift the values to be non-negative
-        # shifted_heatmap = flat_heatmap - np.min(flat_heatmap) + 1e-6
+        # shift the values to non-negative
         shifted_heatmap = flat_heatmap - np.min(flat_heatmap)
-
-        # Calculate the weights by taking the exponential of the shifted heatmap
-        # weights = np.exp(shifted_heatmap)
         weights = shifted_heatmap
 
-        # Normalize the weights to sum up to 1
+        # normalize the weights
         normalized_weights = weights / np.sum(weights)
 
-        # Generate a random value between 0 and 1
         random_value = random.uniform(0, 1)
 
-        # Calculate the cumulative weights
+        # calculate the cumulative weights
         cumulative_weights = np.cumsum(normalized_weights)
 
-        # Find the index where the random value falls in the cumulative weights
+        # find the correct index
         index = np.searchsorted(cumulative_weights, random_value)
 
-        # Convert the index back to 2D coordinates
+        # convert the index to coordinates
         height, width, _ = self.heat_map.shape
         heat_map_shape = height, width
 
-        # Ensure the index is within bounds
+        # check if within ounds
         index = min(max(index, 0), np.prod(heat_map_shape) - 1)
 
-        # y, x = np.unravel_index(index - 1, heat_map_shape)  # TODO CHECK NEW VERSION
         y, x = np.unravel_index(index, heat_map_shape)
         return y, x
 
@@ -206,7 +199,7 @@ class RRTStar:
             path.append(current_node.position)
             current_node = current_node.parent
 
-        path.reverse()  # Reverse the path to start from the start node
+        path.reverse()
         return path
 
     def lebesgue_measure(self, dim: int) -> float:
@@ -243,15 +236,15 @@ class RRTStar:
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
                     goal_node.position = self.goal
-                    # Break for now, if tuned better it can iterate for longer to find better path?
+                    # break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
 
-        if goal_node is None:  # Goal not reached
-            goal_node = self.best_node  # Take the closest node to goal TODO should be checked for obstacle
+        if goal_node is None:  # goal not reached
+            goal_node = self.best_node  # take the closest node to goal
             # return None
 
-        # Find the best path from the goal to the start
+        # find the best path
         path = self.find_path(goal_node)
         return path, self.iteration_no
 
@@ -259,18 +252,18 @@ class RRTStar:
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax[0].plot(x_values, y_values, 'b-')
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:
@@ -290,23 +283,23 @@ class RRTStar:
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot path
+        # plot path
         y_values = [position[0] for position in path]
         x_values = [position[1] for position in path]
         ax[0].plot(x_values, y_values, 'r-', linewidth=2, label='Path')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax[0].plot(x_values, y_values, 'b-', alpha=0.2)
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:
