@@ -121,7 +121,7 @@ class RRTStar:
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
-        new_cost = from_node.cost + dist  # Calculate the new cost
+        new_cost = from_node.cost + dist  # calculate the new cost
 
         new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1]), new_cost)
         new_node.parent = from_node
