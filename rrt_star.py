@@ -1,4 +1,6 @@
 import glob
+from typing import Tuple, List
+
 import cv2
 import random
 import math
@@ -88,7 +90,7 @@ class RRTStar:
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
-        new_cost = from_node.cost + dist  # Calculate the new cost
+        new_cost = from_node.cost + dist  # calculate the new cost
 
         new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1]), new_cost)
         new_node.parent = from_node
@@ -166,7 +168,7 @@ class RRTStar:
             path.append(current_node.position)
             current_node = current_node.parent
 
-        path.reverse()  # Reverse the path to start from the start node
+        path.reverse()  # reverse the path to start from the start node
         return path
 
     def lebesgue_measure(self, dim: int) -> float:
@@ -179,15 +181,15 @@ class RRTStar:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int]]:
+    def rrt_star(self) -> tuple[list[tuple[int, int]], int]:
         goal_node = None
 
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=2)
-            print("ITERATION:", self.iteration_no)
-            print("BEST DISTANCE:", self.best_distance)
-            print("SEARCH RADIUS:", self.search_radius)
+            # print("ITERATION:", self.iteration_no)
+            # print("BEST DISTANCE:", self.best_distance)
+            # print("SEARCH RADIUS:", self.search_radius)
 
             random_sample = self.generate_random_sample()
 
@@ -200,34 +202,34 @@ class RRTStar:
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
                     goal_node.position = self.goal
-                    # Break for now, if tuned better it can iterate for longer to find better path?
+                    # break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
 
-        if goal_node is None:  # Goal not reached
-            goal_node = self.best_node  # Take the closest node to goal TODO should be checked for obstacle
+        if goal_node is None:  # goal not reached
+            goal_node = self.best_node  # take the closest node to goal
             # return None
 
-        # Find the best path from the goal to the start
+        # find the best path
         path = self.find_path(goal_node)
-        return path
+        return path, self.iteration_no
 
     def visualize_tree(self):
         fig, ax = plt.subplots()
         ax.set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax.imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax.plot(x_values, y_values, 'b-')
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax.plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:
@@ -243,23 +245,23 @@ class RRTStar:
         fig, ax = plt.subplots()
         ax.set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax.imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot path
+        # plot path
         y_values = [position[0] for position in path]
         x_values = [position[1] for position in path]
         ax.plot(x_values, y_values, 'r-', linewidth=2, label='Path')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax.plot(x_values, y_values, 'b-', alpha=0.2)
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax.plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:

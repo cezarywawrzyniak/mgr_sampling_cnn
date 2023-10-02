@@ -3,6 +3,7 @@ pytorch_tutorial/
 lightning_logs/
 *.pth
 *.png
+*.xlsx
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

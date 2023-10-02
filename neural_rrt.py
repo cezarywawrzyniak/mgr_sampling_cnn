@@ -9,8 +9,8 @@ from time import perf_counter
 
 from train import UNet_cooler, MapsDataModule
 
-BASE_PATH = Path('/home/czarek/mgr/eval_data')
-MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol2.pth"
+BASE_PATH = Path('/home/czarek/mgr/eval_data/')
+MODEL_PATH = "/home/czarek/mgr/models/sampling_cnn_vol3_32.pth"
 MAX_ITERATIONS = 5000
 GOAL_THRESHOLD = 5.0
 
@@ -71,33 +71,31 @@ class RRTStar:
                 return y, x
 
     def generate_neural_sample(self) -> tuple[int, int]:
-        # Flatten the heatmap to a 1D array
         flat_heatmap = self.heat_map.flatten()
 
-        # Add a constant to shift the values to be non-negative
-        # shifted_heatmap = flat_heatmap - np.min(flat_heatmap) + 1e-6
+        # shift the values to non-negative
         shifted_heatmap = flat_heatmap - np.min(flat_heatmap)
-
-        # Calculate the weights by taking the exponential of the shifted heatmap
-        # weights = np.exp(shifted_heatmap)
         weights = shifted_heatmap
 
-        # Normalize the weights to sum up to 1
+        # normalize the weights
         normalized_weights = weights / np.sum(weights)
 
-        # Generate a random value between 0 and 1
         random_value = random.uniform(0, 1)
 
-        # Calculate the cumulative weights
+        # calculate the cumulative weights
         cumulative_weights = np.cumsum(normalized_weights)
 
-        # Find the index where the random value falls in the cumulative weights
+        # find the correct index
         index = np.searchsorted(cumulative_weights, random_value)
 
-        # Convert the index back to 2D coordinates
+        # convert the index to coordinates
         height, width, _ = self.heat_map.shape
         heat_map_shape = height, width
-        y, x = np.unravel_index(index-1, heat_map_shape)
+
+        # check if within ounds
+        index = min(max(index, 0), np.prod(heat_map_shape) - 1)
+
+        y, x = np.unravel_index(index, heat_map_shape)
         return y, x
 
     def find_nearest_neighbor(self, sample) -> Node:
@@ -123,7 +121,7 @@ class RRTStar:
 
         # recalculate the distance
         dist = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
-        new_cost = from_node.cost + dist  # Calculate the new cost
+        new_cost = from_node.cost + dist  # calculate the new cost
 
         new_node = Node((from_node.position[0] + direction[0], from_node.position[1] + direction[1]), new_cost)
         new_node.parent = from_node
@@ -201,7 +199,7 @@ class RRTStar:
             path.append(current_node.position)
             current_node = current_node.parent
 
-        path.reverse()  # Reverse the path to start from the start node
+        path.reverse()
         return path
 
     def lebesgue_measure(self, dim: int) -> float:
@@ -214,15 +212,15 @@ class RRTStar:
         return math.pow(2 * (1 + 1.0 / dim) * (self.search_space_volume() / self.lebesgue_measure(dim)) * (
                     math.log(self.iteration_no) / self.iteration_no), 1.0 / dim)
 
-    def rrt_star(self) -> list[tuple[int, int]]:
+    def rrt_star(self) -> tuple[list[tuple[int, int]], int]:
         goal_node = None
 
         for i in range(self.max_iterations):
             self.iteration_no = i + 1
             self.search_radius = self.compute_search_radius(dim=2)
-            print("ITERATION:", self.iteration_no)
-            print("BEST DISTANCE:", self.best_distance)
-            print("SEARCH RADIUS:", self.search_radius)
+            # print("ITERATION:", self.iteration_no)
+            # print("BEST DISTANCE:", self.best_distance)
+            # print("SEARCH RADIUS:", self.search_radius)
 
             if random.random() < self.neural_bias:
                 random_sample = self.generate_neural_sample()
@@ -238,34 +236,34 @@ class RRTStar:
                 if self.goal_reached(new_node, self.goal):
                     goal_node = new_node
                     goal_node.position = self.goal
-                    # Break for now, if tuned better it can iterate for longer to find better path?
+                    # break for now, if tuned better it can iterate for longer to find better path?
                     break
                 self.nodes.append(new_node)
 
-        if goal_node is None:  # Goal not reached
-            goal_node = self.best_node  # Take the closest node to goal TODO should be checked for obstacle
+        if goal_node is None:  # goal not reached
+            goal_node = self.best_node  # take the closest node to goal
             # return None
 
-        # Find the best path from the goal to the start
+        # find the best path
         path = self.find_path(goal_node)
-        return path
+        return path, self.iteration_no
 
     def visualize_tree(self, mask: np.array):
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax[0].plot(x_values, y_values, 'b-')
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:
@@ -285,23 +283,23 @@ class RRTStar:
         fig, ax = plt.subplots(1, 3)
         ax[0].set_aspect('equal')
 
-        # Plot obstacles or occupancy map if available
+        # plot obstacles or occupancy map if available
         if self.occ_map is not None:
             ax[0].imshow(self.occ_map, cmap='gray', origin='lower')
 
-        # Plot path
+        # plot path
         y_values = [position[0] for position in path]
         x_values = [position[1] for position in path]
         ax[0].plot(x_values, y_values, 'r-', linewidth=2, label='Path')
 
-        # Plot nodes and connections
+        # plot nodes and connections
         for node in self.nodes:
             for child in node.children:
                 y_values = [node.position[0], child.position[0]]
                 x_values = [node.position[1], child.position[1]]
                 ax[0].plot(x_values, y_values, 'b-', alpha=0.2)
 
-        # Set start and goal markers if available
+        # set start and goal markers if available
         if self.start_node.position is not None:
             ax[0].plot(self.start_node.position[1], self.start_node.position[0], 'go', markersize=8, label='Start')
         if self.goal is not None:
@@ -351,7 +349,7 @@ def generate_paths():
     timer_neural_start = perf_counter()
     with torch.no_grad():
         output = model(image, coords)
-        clipped = torch.clamp(output, min=-10, max=1)
+        clipped = torch.clamp(output, min=-3, max=1)
 
     clipped = clipped.detach().cpu().numpy()
     clipped = clipped.transpose((0, 2, 3, 1))
@@ -362,14 +360,21 @@ def generate_paths():
     y_finish = coords.data.tolist()[0][0][1][1]
     start = (y_start, x_start)
     finish = (y_finish, x_finish)
+    # print("START", start)
+    # print("FINISH", finish)
 
     rrt_neural = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                          goal_threshold=GOAL_THRESHOLD, neural_bias=0.75)
-    path = rrt_neural.rrt_star()
+    path, iterations = rrt_neural.rrt_star()
     timer_neural_stop = perf_counter()
 
+    # f, axarr = plt.subplots(1, 2)
+    # axarr[0].imshow(occ_map)
+    # axarr[1].imshow(clipped[0])
+    # plt.show()
+
     if path:
-        rrt_neural.visualize_tree(ideal_mask)
+        # rrt_neural.visualize_tree(ideal_mask)
         rrt_neural.visualize_path(path, ideal_mask)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
@@ -377,11 +382,11 @@ def generate_paths():
     timer_rrt_start = perf_counter()
     rrt = RRTStar(occ_map=occ_map, heat_map=clipped, start=start, goal=finish, max_iterations=MAX_ITERATIONS,
                   goal_threshold=GOAL_THRESHOLD, neural_bias=0.0)
-    path = rrt.rrt_star()
+    path, iterations = rrt.rrt_star()
     timer_rrt_stop = perf_counter()
 
     if path:
-        rrt.visualize_tree(ideal_mask)
+        # rrt.visualize_tree(ideal_mask)
         rrt.visualize_path(path, ideal_mask)
     else:
         print("COULDN'T FIND A PATH FOR THIS EXAMPLE:", start, finish)
