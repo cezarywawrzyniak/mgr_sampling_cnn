@@ -9,22 +9,22 @@ This master's thesis explores the application of convolutional neural networks i
 Code is separated for 2D network and 3D network. Both cases have training code along with scripts to create training data step by step. 
 
 ### Creating 2D data step by step
-![2D_data](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/43974ca291ad02df38224893d32b376ddfd1502e/architectures/english/data.svg?token=AYFBCK2REZOLYOFONF56BSLFDRCYM)
+![2D_data](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/refs/heads/main/architectures/english/data.svg)
 
 ### Operation of the 2D system
-![2D_system](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/43974ca291ad02df38224893d32b376ddfd1502e/architectures/english/path_planning.svg?token=AYFBCKZWIXBODJSZDSFYHY3FDRCZ6)
+![2D_system](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/refs/heads/main/architectures/english/path_planning.svg)
 
 ### Path planning alghorithm
-![neural_rrt](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/99d40475d43d949d7124626a75e266a5dad4895a/architectures/english/neural_rrt.svg?token=AYFBCK7NZ3WCKAVJGGSECY3FDRD7M)
+![neural_rrt](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/refs/heads/main/architectures/english/neural_rrt.svg)
 
 ### 2D neural architecture
-![2D_architecture](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/99d40475d43d949d7124626a75e266a5dad4895a/architectures/english/2D_architecture.svg?token=AYFBCK4TC3TTSEWWRNXAHY3FDRD7Y)
+![2D_architecture](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/refs/heads/main/architectures/english/2D_architecture.svg)
 
 ### Entire 3D system
-![3D_system](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/99d40475d43d949d7124626a75e266a5dad4895a/architectures/english/3D_system.svg?token=AYFBCK77SH6VSCPK6IBQPXTFDREAI)
+![3D_system](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/90d34ca67bb9b436a22190513e6046b68d60e6b2/architectures/english/3D_system.svg)
 
 ### 3D nerual architecture
-![3D_architecture](https://raw.githubusercontent.com/czarkoman/mgr_sampling_cnn/99d40475d43d949d7124626a75e266a5dad4895a/architectures/english/3D_architecture.svg?token=AYFBCK4XW3MLX57X5YDPK6DFDREAK)
+![3D_architecture](https://raw.githubusercontent.com/cezarywawrzyniak/mgr_sampling_cnn/90d34ca67bb9b436a22190513e6046b68d60e6b2/architectures/english/3D_architecture.svg)
 
 ## Results 
 ![results_1](https://github.com/czarkoman/mgr_sampling_cnn/blob/main/architectures/english/Slide15.jpg?raw=true)
